@@ -16,13 +16,19 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback,
-        GoogleMap.OnMarkerClickListener {
+
+
+class MapsActivity :
+        AppCompatActivity(),
+        OnMapReadyCallback,
+        GoogleMap.OnMarkerClickListener,
+        AuthListener {
     override fun onMarkerClick(p0: Marker?) = false
 
     private lateinit var mMap: GoogleMap
     private lateinit var mCurLocation : Location
     private lateinit var mLocationClient : FusedLocationProviderClient
+    private lateinit var authDialog : AuthDialog
 
     companion object {
         private const val PERMISSION_LOCATION_REQUEST_CODE = 1
@@ -38,18 +44,31 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback,
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
         mLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
+        // Authentication Dialog
+        val metrics = resources.displayMetrics
+        val height = metrics.heightPixels
+        authDialog = AuthDialog(listener = this, context = this)
+        authDialog.setCancelable(true)
+        authDialog.show()
+        //authDialog.window?.setLayout( ActionBar.LayoutParams.WRAP_CONTENT , (6 * height) / 7)
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-        mMap.getUiSettings().setZoomControlsEnabled(true)
+        mMap.uiSettings.isZoomControlsEnabled = true
         mMap.setOnMarkerClickListener(this)
 
-        setUpMapFragment()
+        moveToCurrentLocation()
     }
 
-    private fun setUpMapFragment() {
-        Log.d(TAG, "Setting up Map Fragment")
+    private fun addMarkerAtLocation(location: LatLng) {
+        val markerOptions = MarkerOptions().position(location)
+        mMap.addMarker(markerOptions)
+    }
+
+    private fun moveToCurrentLocation() {
+        Log.d(TAG, "Getting Permissions")
         if (ActivityCompat.checkSelfPermission(
                 this,
                 android.Manifest.permission.ACCESS_FINE_LOCATION
@@ -62,25 +81,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback,
             )
             return
         } else {
-            moveToCurrentLocation()
-        }
-    }
+            Log.d(TAG, "Set up current location on map")
+            mMap.isMyLocationEnabled = true
 
-    private fun addMarkerAtLocation(location: LatLng) {
-        val markerOptions = MarkerOptions().position(location)
-        mMap.addMarker(markerOptions)
-    }
-
-    private fun moveToCurrentLocation() {
-        Log.d(TAG, "Set up current location on map")
-        mMap.isMyLocationEnabled = true
-
-        mLocationClient.lastLocation.addOnSuccessListener(this) { location ->
-            if (location != null) {
-                mCurLocation = location
-                val currentLatLng = LatLng(location.latitude, location.longitude)
-                addMarkerAtLocation(currentLatLng)
-                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 18f))
+            mLocationClient.lastLocation.addOnSuccessListener(this) { location ->
+                if (location != null) {
+                    mCurLocation = location
+                    val currentLatLng = LatLng(location.latitude, location.longitude)
+                    addMarkerAtLocation(currentLatLng)
+                    mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 18f))
+                }
             }
         }
     }
@@ -94,6 +104,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback,
                     moveToCurrentLocation()
                 }
                 return
+            }
+        }
+    }
+
+    override fun onCodeReceived(access_token: String?) {
+        when (access_token) {
+            null -> authDialog.dismiss()
+            else -> {
+                Log.d(TAG, access_token)
+                authDialog.dismiss()
             }
         }
     }
