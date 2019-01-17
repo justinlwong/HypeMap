@@ -1,11 +1,17 @@
 package justin.apackage.com.hypemap
 
+import android.app.AlertDialog
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
+import android.view.Gravity
+import android.view.WindowManager
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -33,23 +39,20 @@ class MapsActivity :
         AppCompatActivity(),
         OnMapReadyCallback,
         GoogleMap.OnMarkerClickListener {
-    override fun onMarkerClick(p0: Marker?) : Boolean {
-        if (p0 != null) {
-            p0.showInfoWindow()
-            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(p0.position, 12f))
-            return true
-        }
-        return false
-    }
 
     private lateinit var mMap: GoogleMap
     private lateinit var mCurLocation : Location
     private lateinit var mLocationClient : FusedLocationProviderClient
+    private lateinit var postPopupBuilder : AlertDialog.Builder
+    private lateinit var postPopup : AlertDialog
+    private lateinit var wv : WebView
     private val gson: Gson by lazy {GsonBuilder().create()}
     private val instagramService: InstagramService by lazy {setupRetrofit()}
     private var mUserMarkers: MutableList<UserMarkers> = mutableListOf()
     private val mUserList : MutableList<String> = mutableListOf(
         "blogto",
+        "laurentsai",
+        "bestdressed",
         "mattshr",
         "jayscale",
         "visionelie",
@@ -71,6 +74,18 @@ class MapsActivity :
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
         mLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        postPopupBuilder = AlertDialog.Builder(this)
+        wv = WebView(this)
+        wv.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                return false
+            }
+        }
+        wv.setInitialScale(1)
+        wv.settings.useWideViewPort = true
+        wv.settings.loadWithOverviewMode = true
+        postPopupBuilder.setView(wv)
+        postPopup = postPopupBuilder.create()
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -131,18 +146,19 @@ class MapsActivity :
                                 val location = node.getJSONObject("location")
 
                                 Log.d(TAG, "location: ${location.getString("name")} id: ${location.getInt("id")}")
-                                markerPosts.add(MarkerPostData(locationId = location.getInt("id"),
+                                markerPosts.add(MarkerPostData(user = userName,
+                                    locationId = location.getInt("id"),
                                     name = location.getString("name"),
                                     latitude = null,
                                     longitude = null,
                                     postUrl = posts.getJSONObject(i)
                                         .getJSONObject("node")
-                                        .getString("display_url")))
+                                        .getString("thumbnail_src")))
                             }
                         }
 
                         val newUserMarker = UserMarkers(
-                            user.getString("full_name"),
+                            userName,
                             user.getString("profile_pic_url"),
                             markerPosts)
 
@@ -262,5 +278,35 @@ class MapsActivity :
                 return
             }
         }
+    }
+
+    override fun onMarkerClick(p0: Marker?) : Boolean {
+        if (p0 != null) {
+            p0.showInfoWindow()
+            mMap.setPadding(0, 0, 0, 1000)
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(p0.position, 12f), object : GoogleMap.CancelableCallback {
+                override fun onCancel() {
+                    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+                }
+
+                override fun onFinish() {
+                    if (p0.tag != null) {
+                        var data = p0.tag as MarkerPostData
+
+                        wv.loadUrl(data.postUrl)
+                        postPopup.setTitle(data.user)
+
+                        postPopup.show()
+                        val lp = WindowManager.LayoutParams()
+                        lp.copyFrom(postPopup.window?.attributes)
+                        lp.gravity = Gravity.BOTTOM
+                        lp.y = -500
+                        postPopup.window?.attributes = lp
+                    }
+                }
+            })
+            return true
+        }
+        return false
     }
 }
