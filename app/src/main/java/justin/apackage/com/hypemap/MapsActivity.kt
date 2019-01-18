@@ -1,8 +1,11 @@
 package justin.apackage.com.hypemap
 
 import android.app.AlertDialog
+import android.content.DialogInterface
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
+import android.net.Uri
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
@@ -49,16 +52,10 @@ class MapsActivity :
     private val gson: Gson by lazy {GsonBuilder().create()}
     private val instagramService: InstagramService by lazy {setupRetrofit()}
     private var mUserMarkers: MutableList<UserMarkers> = mutableListOf()
-    private val mUserList : MutableList<String> = mutableListOf(
+    private val mUserList : List<String> = listOf(
         "blogto",
-        "laurentsai",
-        "bestdressed",
-        "mattshr",
-        "jayscale",
-        "visionelie",
-        "tilore",
-        "themelodyh"
-        )
+        "toreats",
+        "torontolife")
 
     companion object {
         private const val PERMISSION_LOCATION_REQUEST_CODE = 1
@@ -93,6 +90,8 @@ class MapsActivity :
         mMap.uiSettings.isZoomControlsEnabled = true
         mMap.setOnMarkerClickListener(this)
 
+        // Set to Toronto
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(43.6712698,-79.3819235), 12f))
         moveToCurrentLocation()
 
         // TODO: In the future, input a list of user profiles here and only call this on refresh
@@ -134,10 +133,10 @@ class MapsActivity :
                             .getJSONObject("graphql")
                             .getJSONObject("user")
 
-                        var posts : JSONArray = user.getJSONObject("edge_owner_to_timeline_media")
+                        val posts : JSONArray = user.getJSONObject("edge_owner_to_timeline_media")
                             .getJSONArray("edges")
 
-                        var markerPosts : MutableList<MarkerPostData> = mutableListOf()
+                        val markerPosts : MutableList<MarkerPostData> = mutableListOf()
                         for (i in 0..(posts.length() - 1)) {
                             val node = posts.getJSONObject(i)
                                 .getJSONObject("node")
@@ -145,28 +144,46 @@ class MapsActivity :
                             if (!node.isNull("location")) {
                                 val location = node.getJSONObject("location")
 
-                                Log.d(TAG, "location: ${location.getString("name")} id: ${location.getInt("id")}")
+                                Log.d(TAG, "location: ${location.getString("name")} id: ${location.getString("id")}")
+                                var captionText  = ""
+                                val captionEdge = posts.getJSONObject(i)
+                                    .getJSONObject("node")
+                                    .getJSONObject("edge_media_to_caption")
+
+                                if (!captionEdge.isNull("edges")) {
+                                    captionText = captionEdge.getJSONArray("edges")
+                                        .getJSONObject(0)
+                                        .getJSONObject("node")
+                                        .getString("text")
+                                }
+
                                 markerPosts.add(MarkerPostData(user = userName,
-                                    locationId = location.getInt("id"),
+                                    locationId = location.getString("id"),
                                     name = location.getString("name"),
                                     latitude = null,
                                     longitude = null,
-                                    postUrl = posts.getJSONObject(i)
+                                    postUrl = posts.getJSONObject(i)//"https//www.instagram.com/p/${posts.getJSONObject(i)
                                         .getJSONObject("node")
-                                        .getString("thumbnail_src")))
+                                        .getString("thumbnail_src"),
+                                    linkUrl = "https://www.instagram.com/p/${posts.getJSONObject(i)
+                                        .getJSONObject("node")
+                                        .getString("shortcode")}",
+                                    caption = captionText))
                             }
                         }
+
+                        val userPosts : List<MarkerPostData> = markerPosts
 
                         val newUserMarker = UserMarkers(
                             userName,
                             user.getString("profile_pic_url"),
-                            markerPosts)
+                            userPosts)
 
                         mUserMarkers.add(newUserMarker)
 
                         Log.d(TAG, "Adding new user: ${newUserMarker.userName}")
 
-                        getLocationCoordinates()
+                        getLocationCoordinates(newUserMarker)
 
                     } else {
                         Log.e(TAG, "Request was bad")
@@ -176,47 +193,57 @@ class MapsActivity :
         })
     }
 
-    private fun getLocationCoordinates() {
-        for (user in mUserMarkers) {
-            for (location in user.posts) {
-                Log.d(TAG, "Searching $location.name")
-                val call = instagramService.getCoordinates(location.locationId.toString())
-                Log.d(TAG, call.toString())
-                call.enqueue(object : Callback<ResponseBody> {
-                    override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
-                        Log.d(TAG, "onFailure getCoordinates")
-                    }
+    private fun locationSearch(posts: ListIterator<MarkerPostData>) {
+        if (posts.hasNext()) {
+            val location = posts.next()
+            Log.d(TAG, "Searching $location.name, $location.locationId")
+            val call = instagramService.getCoordinates(location.locationId)
+            Log.d(TAG, call.toString())
+            call.enqueue(object : Callback<ResponseBody> {
+                override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                    Log.d(TAG, "onFailure getCoordinates")
+                }
 
-                    override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
-                        if (response.body() != null) {
-                            // parse json
-                            val json = response.body()?.string()
-                            if (json != null) {
-                                val jsonObj = JSONObject(json)
+                override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+                    if (response.body() != null) {
+                        // parse json
+                        val json = response.body()?.string()
+                        if (json != null) {
+                            val jsonObj = JSONObject(json)
 
-                                val locationData = jsonObj.getJSONObject("graphql")
-                                    .getJSONObject("location")
-                                location.latitude = locationData.getDouble("lat")
-                                location.longitude = locationData.getDouble("lng")
-                                Log.d(TAG, "Updated $location.name with coords: " +
-                                        "${location.latitude}, ${location.longitude})")
+                            val locationData = jsonObj.getJSONObject("graphql")
+                                .getJSONObject("location")
+                            location.latitude = locationData.getDouble("lat")
+                            location.longitude = locationData.getDouble("lng")
+                            Log.d(
+                                TAG, "Updated $location.name with coords: " +
+                                        "${location.latitude}, ${location.longitude})"
+                            )
 
-                                // Add Marker
-                                val lat = location.latitude
-                                val lng = location.longitude
-                                if (lat != null && lng != null) {
-                                    var loc = LatLng(lat, lng)
-                                    addMarkerAtLocation(loc, location.name, location)
-                                }
-
+                            // Add Marker
+                            val lat: Double? = location.latitude
+                            val lng: Double? = location.longitude
+                            if (lat != null && lng != null) {
+                                val loc = LatLng(lat, lng)
+                                addMarkerAtLocation(loc, location.name, location)
                             }
-                        } else {
-                            Log.e(TAG, "Request was bad")
                         }
+                    } else {
+                        Log.e(TAG, "Request was bad: $response")
                     }
-                })
-            }
+
+                    // call next
+                    while (posts.hasNext()) {
+                        locationSearch(posts)
+                    }
+                }
+            })
         }
+    }
+
+    private fun getLocationCoordinates(user: UserMarkers) {
+        val posts: ListIterator<MarkerPostData> = user.posts.listIterator()
+        locationSearch(posts)
     }
 
     private fun setupRetrofit() : InstagramService {
@@ -235,7 +262,7 @@ class MapsActivity :
         val mkr = mMap.addMarker(markerOptions)
 
         if (postData != null) {
-            mkr.setTag(postData)
+            mkr.tag = postData
         }
     }
 
@@ -259,9 +286,9 @@ class MapsActivity :
             mLocationClient.lastLocation.addOnSuccessListener(this) { location ->
                 if (location != null) {
                     mCurLocation = location
-                    val currentLatLng = LatLng(location.latitude, location.longitude)
-                    addMarkerAtLocation(currentLatLng, "You", null)
-                    //mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 18f))
+                    //val currentLatLng = LatLng(location.latitude, location.longitude)
+                    //addMarkerAtLocation(currentLatLng, "You", null)
+                    //mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 8f))
                 }
             }
         }
@@ -283,7 +310,7 @@ class MapsActivity :
     override fun onMarkerClick(p0: Marker?) : Boolean {
         if (p0 != null) {
             p0.showInfoWindow()
-            mMap.setPadding(0, 0, 0, 1000)
+            mMap.setPadding(0, 0, 0, 1500)
             mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(p0.position, 12f), object : GoogleMap.CancelableCallback {
                 override fun onCancel() {
                     TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -291,16 +318,27 @@ class MapsActivity :
 
                 override fun onFinish() {
                     if (p0.tag != null) {
-                        var data = p0.tag as MarkerPostData
+                        val data = p0.tag as MarkerPostData
 
                         wv.loadUrl(data.postUrl)
                         postPopup.setTitle(data.user)
+                        postPopup.setMessage(data.caption)
+                        postPopup.setButton(
+                            DialogInterface.BUTTON_NEUTRAL,
+                            "View",
+                            { dialog, whichButton ->
+                                val url = data.linkUrl
+                                val i = Intent(Intent.ACTION_VIEW)
+                                i.data = Uri.parse(url)
+                                startActivity(i)
+                            }
+                        )
 
                         postPopup.show()
                         val lp = WindowManager.LayoutParams()
                         lp.copyFrom(postPopup.window?.attributes)
                         lp.gravity = Gravity.BOTTOM
-                        lp.y = -500
+                        //lp.y = -1000
                         postPopup.window?.attributes = lp
                     }
                 }
