@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:context=".OverlayFragment">
+
+        <RelativeLayout android:layout_width="match_parent"
+                        android:layout_height="match_parent">
+
+            <EditText
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="5dp"
+                    android:layout_alignParentLeft="true"
+                    android:id="@+id/get_user_input"
+                    android:background="@color/white"
+                    android:inputType="text"
+                    android:imeOptions="actionDone"
+                    android:hint="Add new user to follow"/>
+
+            <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="5dp"
+                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentBottom="true"
+                    android:id="@+id/clear_button"
+                    android:text="Clear"/>
+
+            <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="5dp"
+                    android:layout_alignParentBottom="true"
+                    android:layout_toRightOf="@id/clear_button"
+                    android:id="@+id/zoom_in_button"
+                    android:text="Zoom in"/>
+
+            <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="5dp"
+                    android:layout_alignParentBottom="true"
+                    android:layout_toRightOf="@id/zoom_in_button"
+                    android:id="@+id/zoom_out_button"
+                    android:text="Zoom out"/>
+
+        </RelativeLayout>
+
+</FrameLayout>
