@@ -8,7 +8,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
-import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ListView
@@ -66,14 +65,9 @@ class OverlayFragment : Fragment() {
 
         mModel.getUsers().observe(this, Observer<List<User>> { usersList ->
             if (usersList != null) {
-                val nameList: MutableList<String> = mutableListOf()
-                for (user in usersList) {
-                    nameList.add(user.userName)
-                }
-                val usersListAdapter: ArrayAdapter<String> = ArrayAdapter(
-                    activity,
-                    R.layout.users_list_item, nameList
-                )
+                val usersListAdapter = UsersListAdapter(
+                    this.activity!!,
+                    usersList)
                 usersListView?.adapter = usersListAdapter
             }
         })
