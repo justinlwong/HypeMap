@@ -1,35 +1,22 @@
 package justin.apackage.com.hypemap
 
-import android.arch.lifecycle.MutableLiveData
-import android.arch.lifecycle.ViewModel
+import android.app.Application
+import android.arch.lifecycle.AndroidViewModel
+import android.arch.lifecycle.LiveData
 import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Marker
 
-class HypeMapViewModel : ViewModel() {
+class HypeMapViewModel (application: Application) : AndroidViewModel(application) {
 
-    private val instaRepo: InstagramRepository = InstagramRepository()
+    private val instaRepo: InstagramRepository = InstagramRepository(application)
     lateinit var mMap: GoogleMap
 
-    fun getLatestPost(): MutableLiveData<Pair<String, MarkerPostData>> {
-        return instaRepo.getLatestPost()
+    fun getPosts(): LiveData<List<Post>> {
+        return instaRepo.getPosts()
     }
 
-    fun getLocationMap(): Map<String, LatLng> {
-        return instaRepo.getLocationMap()
+    fun showUserMarkers(userName: String, visible: Boolean) {
+        instaRepo.showUserMarkers(userName, visible)
     }
-
-    fun hideUserMarkers(userName: String) {
-        instaRepo.hideUserMarkers(userName)
-    }
-
-    fun addMarker(userName: String, mkr: Marker) {
-        instaRepo.addMarker(userName, mkr)
-    }
-
-    // These methods will get repository to update
-    // Observers on the getUsersMarkers() method will be
-    // notified of new changes to it
 
     fun updateInstaData() {
         instaRepo.updatePosts()
@@ -37,6 +24,10 @@ class HypeMapViewModel : ViewModel() {
 
     fun addUser(userName: String) {
         instaRepo.addUser(userName)
+    }
+
+    fun getUsers(): LiveData<List<User>> {
+        return instaRepo.getUsers()
     }
 
     fun removeAll() {

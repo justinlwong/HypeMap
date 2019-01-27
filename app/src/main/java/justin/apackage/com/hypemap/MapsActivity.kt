@@ -34,7 +34,6 @@ class MapsActivity :
         GoogleMap.OnMarkerClickListener {
     
     private lateinit var mOverlayFragment: OverlayFragment
-    private lateinit var mUserMarkers: MutableList<UserPosts>
     private lateinit var mCurLocation : Location
     private lateinit var mLocationClient : FusedLocationProviderClient
     private lateinit var postPopupBuilder : AlertDialog.Builder
@@ -75,9 +74,6 @@ class MapsActivity :
         wv.settings.loadWithOverviewMode = true
         postPopupBuilder.setView(wv)
         postPopup = postPopupBuilder.create()
-
-        mUserMarkers = mutableListOf()
-
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -89,25 +85,29 @@ class MapsActivity :
         mModel.mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(43.6712698,-79.3819235), 1f))
         moveToCurrentLocation()
 
-        // Response to changes to each location added
-        mModel.getLatestPost()?.observe(this, Observer<Pair<String,MarkerPostData>> { postEntry ->
-            val (id, post) = postEntry!!
-            val map = mModel.getLocationMap()
-            val loc: LatLng? = map[id]
-            if (loc != null) {
-                addMarkerAtLocation(loc, post.name, post)
+        mModel.getPosts().observe(this, Observer<List<Post>> { posts ->
+            if (posts != null) {
+                mModel.mMap.clear()
+                for (post in posts) {
+                    val id = post.locationId
+                    val name = post.locationName
+                    Log.d(TAG, "observing location id: $id and name: $name with coords: ${post.latitude}, ${post.longitude}")
+                    addMarkerAtLocation(
+                        LatLng(post.latitude, post.longitude),
+                        name,
+                        post)
+
+                }
             }
         })
-
-        mModel.addUser("blogto")
     }
 
-    private fun addMarkerAtLocation(location: LatLng, locationName: String, postData: MarkerPostData) {
+    private fun addMarkerAtLocation(location: LatLng, locationName: String, postData: Post) {
         val markerOptions = MarkerOptions().position(location)
             .title(locationName)
 
         val mkr = mModel.mMap.addMarker(markerOptions)
-        mModel.addMarker(postData.user, mkr)
+
         mkr.tag = postData
     }
 
@@ -153,17 +153,22 @@ class MapsActivity :
         if (p0 != null) {
             p0.showInfoWindow()
             mModel.mMap.setPadding(0, 0, 0, 1500)
-            mModel.mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(p0.position, 12f), object : GoogleMap.CancelableCallback {
+            val zoom = mModel.mMap.cameraPosition.zoom
+            var duration = 100f
+            if (zoom != 0f) {
+                duration = 200f * (12f / mModel.mMap.cameraPosition.zoom)
+            }
+
+            mModel.mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(p0.position, 12f), duration.toInt(), object : GoogleMap.CancelableCallback {
                 override fun onCancel() {
-                    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
                 }
 
                 override fun onFinish() {
                     if (p0.tag != null) {
-                        val data = p0.tag as MarkerPostData
+                        val data = p0.tag as Post
 
                         wv.loadUrl(data.postUrl)
-                        postPopup.setTitle(data.user)
+                        postPopup.setTitle(data.userName)
                         var caption = data.caption
                         if (caption.length > 100) {
                             caption = caption.substring(0, 100)
