@@ -34,4 +34,8 @@ class HypeMapViewModel (application: Application) : AndroidViewModel(application
         instaRepo.removeAll()
     }
 
+    fun removeUser(userName: String) {
+        instaRepo.removeUser(userName)
+    }
+
 }

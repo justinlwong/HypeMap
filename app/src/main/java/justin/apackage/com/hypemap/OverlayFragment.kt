@@ -46,11 +46,9 @@ class OverlayFragment : Fragment() {
         val zOutButton: Button? = getView()?.findViewById(R.id.zoom_out_button)
         val usersListView: ListView? = getView()?.findViewById(R.id.users_list)
 
-        cButton.setText("Clear")
+        cButton.text = "Clear"
         cButton.setTextColor(ResourcesCompat.getColor(context!!.resources, R.color.grey, null))
         cButton.setBackgroundColor(ResourcesCompat.getColor(context!!.resources, R.color.white, null))
-        usersListView?.addFooterView(cButton)
-
 
         eView?.setOnEditorActionListener { v, actionId, event ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
@@ -60,24 +58,28 @@ class OverlayFragment : Fragment() {
             return@setOnEditorActionListener false
         }
 
-        cButton.setOnClickListener {
-            mModel.removeAll()
-        }
+        usersListView?.addFooterView(cButton)
 
         zOutButton?.setOnClickListener {
             mModel.mMap.animateCamera(CameraUpdateFactory.zoomBy(-14.0f))
         }
 
         mModel.getUsers().observe(this, Observer<List<User>> { usersList ->
-            usersListView?.removeFooterView(cButton)
             if (usersList != null) {
                 val usersListAdapter = UsersListAdapter(
                     this.activity!!,
                     mModel,
                     usersList)
                 usersListView?.adapter = usersListAdapter
-                if (!usersList.isEmpty()) {
-                    usersListView?.addFooterView(cButton)
+                if (usersList.isEmpty()) {
+                    usersListView?.removeFooterView(cButton)
+                } else {
+                    if (usersListView?.footerViewsCount == 0) {
+                        cButton.setOnClickListener {
+                            mModel.removeAll()
+                        }
+                        usersListView.addFooterView(cButton)
+                    }
                 }
             }
         })

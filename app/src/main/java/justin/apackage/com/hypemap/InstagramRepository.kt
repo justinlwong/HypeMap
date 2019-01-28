@@ -36,7 +36,7 @@ class InstagramRepository(application: Application) {
     }
 
     fun updatePosts() {
-        mExecutor.execute({
+        mExecutor.execute{
             val usersList = userDao.getUsers().value
 
             Observable.fromIterable(usersList!!.asIterable())
@@ -45,7 +45,7 @@ class InstagramRepository(application: Application) {
                 .observeOn(Schedulers.computation())
                 .subscribe({ response -> processUserProfileResponse(response) },
                     { error -> Log.d(TAG, "getPosts error: $error") })
-        })
+        }
     }
 
     private fun processUserProfileResponse(response: ResponseBody) {
@@ -171,7 +171,7 @@ class InstagramRepository(application: Application) {
     }
 
     fun addUser(userName: String) {
-        mExecutor.execute({
+        mExecutor.execute{
             instagramService.getUserPage(userName)
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.computation())
@@ -179,7 +179,15 @@ class InstagramRepository(application: Application) {
                     { error ->
                         Log.d(TAG, "addUser error: $error")
                     })
-        })
+        }
+    }
+
+    fun removeUser(userName: String) {
+        mExecutor.execute {
+            userDao.delete(userName)
+            postDao.delete(userName)
+        }
+
     }
 
     fun getUsers() : LiveData<List<User>> {
@@ -187,14 +195,14 @@ class InstagramRepository(application: Application) {
     }
 
     fun removeAll() {
-        mExecutor.execute({
+        mExecutor.execute{
             postDao.deleteAll()
             userDao.deleteAll()
-        })
+        }
     }
     fun showUserMarkers(userName: String, visible: Boolean) {
         Log.d(TAG, "Setting $userName to visibility: $visible")
-        mExecutor.execute({
+        mExecutor.execute{
             val user = userDao.getUser(userName)
             user.visible = visible
             val posts = postDao.getUserPosts(userName)
@@ -204,7 +212,7 @@ class InstagramRepository(application: Application) {
                 postDao.update(post)
             }
             userDao.update(user)
-        })
+        }
     }
 
     private fun setupRetrofit() : InstagramService {

@@ -5,7 +5,6 @@ import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
 import android.content.DialogInterface
 import android.content.Intent
-import android.location.Location
 import android.net.Uri
 import android.os.Bundle
 import android.support.v4.app.FragmentTransaction
@@ -30,7 +29,6 @@ class MapsActivity :
         GoogleMap.OnMarkerClickListener {
     
     private lateinit var mOverlayFragment: OverlayFragment
-    private lateinit var mCurLocation : Location
     private lateinit var postPopupBuilder : AlertDialog.Builder
     private lateinit var postPopup : AlertDialog
     private lateinit var wv : WebView
@@ -102,12 +100,49 @@ class MapsActivity :
         mkr.tag = postData
     }
 
+    private fun loadPopup(postUrl: String, linkUrl: String, userName: String, caption: String) {
+        wv.loadUrl(postUrl)
+        postPopup.hide()
+        postPopup.setTitle(userName)
+        var captionStr: String = caption
+        if (caption.length > 100) {
+            captionStr = caption.substring(0, 100)
+        }
+        postPopup.setMessage(captionStr)
+        postPopup.setButton(
+            DialogInterface.BUTTON_NEUTRAL,
+            "View")
+        { _, _ ->
+            val i = Intent(Intent.ACTION_VIEW)
+            i.data = Uri.parse(linkUrl)
+            startActivity(i)
+        }
+
+        postPopup.setButton(
+            DialogInterface.BUTTON_NEGATIVE,
+            "Close")
+        { _, _ ->
+            postPopup.hide()
+        }
+
+        postPopup.setOnDismissListener{
+            mModel.mMap.setPadding(0, 0, 0, 0)
+        }
+
+        postPopup.show()
+        val lp = WindowManager.LayoutParams()
+        lp.copyFrom(postPopup.window?.attributes)
+        lp.gravity = Gravity.BOTTOM
+
+        postPopup.window?.attributes = lp
+    }
+
     override fun onMarkerClick(p0: Marker?) : Boolean {
         val post = p0?.tag as Post
         val postUrl = post.postUrl
         val linkUrl = post.linkUrl
         val userName = post.userName
-        var caption = post.caption
+        val caption = post.caption
 
         p0.showInfoWindow()
         mModel.mMap.setPadding(0, 0, 0, 1500)
@@ -119,46 +154,11 @@ class MapsActivity :
 
         mModel.mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(p0.position, 12f), duration.toInt(), object : GoogleMap.CancelableCallback {
             override fun onCancel() {
+                loadPopup(postUrl, linkUrl, userName, caption)
             }
 
             override fun onFinish() {
-                wv.loadUrl(postUrl)
-                postPopup.hide()
-                postPopup.setTitle(userName)
-                if (caption.length > 100) {
-                    caption = caption.substring(0, 100)
-                }
-                postPopup.setMessage(caption)
-                postPopup.setButton(
-                    DialogInterface.BUTTON_NEUTRAL,
-                    "View",
-                    { _, _ ->
-                        val url = linkUrl
-                        val i = Intent(Intent.ACTION_VIEW)
-                        i.data = Uri.parse(url)
-                        startActivity(i)
-                    }
-                )
-
-                postPopup.setButton(
-                    DialogInterface.BUTTON_NEGATIVE,
-                    "Close",
-                    { _, _ ->
-                        postPopup.hide()
-                    }
-                )
-
-                postPopup.setOnDismissListener({
-                    mModel.mMap.setPadding(0, 0, 0, 0)
-                })
-
-                postPopup.show()
-                val lp = WindowManager.LayoutParams()
-                lp.copyFrom(postPopup.window?.attributes)
-                lp.gravity = Gravity.BOTTOM
-
-                postPopup.window?.attributes = lp
-
+                loadPopup(postUrl, linkUrl, userName, caption)
             }
         })
         return true

@@ -34,7 +34,7 @@ class UsersListAdapter(private val context: Context,
     }
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
-        val userView = inflater.inflate(R.layout.users_list_item, parent, false)
+        val userView: View = convertView ?: inflater.inflate(R.layout.users_list_item, parent, false)
         val user = inputSource[position]
         val nameTextView: TextView = userView.findViewById(R.id.user_name)
         val profileImageView: ImageView = userView.findViewById(R.id.user_image)
@@ -55,9 +55,14 @@ class UsersListAdapter(private val context: Context,
             userView.alpha = 0.75f
         }
 
-        userView.setOnClickListener { view ->
+        userView.setOnClickListener {
             Log.d(TAG, "${user.userName} clicked at visibility: ${user.visible}")
             mModel.showUserMarkers(user.userName, !user.visible)
+        }
+
+        userView.setOnLongClickListener {
+            mModel.removeUser(user.userName)
+            return@setOnLongClickListener true
         }
 
         return userView

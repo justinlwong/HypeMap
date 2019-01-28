@@ -23,6 +23,9 @@ interface PostDao {
 
     @Query("DELETE from posts")
     fun deleteAll()
+
+    @Query("DELETE from posts WHERE userName = :userName")
+    fun delete(userName: String)
 }
 
 @Dao
@@ -38,6 +41,9 @@ interface UserDao {
 
     @Update
     fun update(user: User)
+
+    @Query("DELETE from users WHERE userName = :userName")
+    fun delete(userName: String)
 
     @Query("DELETE from users")
     fun deleteAll()
