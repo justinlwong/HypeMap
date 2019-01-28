@@ -123,7 +123,8 @@ class InstagramRepository(application: Application) {
             // Update or add user
             val newUser = User(
                 userName = userName,
-                profilePicUrl = user.getString("profile_pic_url")
+                profilePicUrl = user.getString("profile_pic_url"),
+                visible = true
             )
 
             userDao.insert(newUser)
@@ -186,18 +187,23 @@ class InstagramRepository(application: Application) {
     }
 
     fun removeAll() {
-        postDao.deleteAll()
-        userDao.deleteAll()
+        mExecutor.execute({
+            postDao.deleteAll()
+            userDao.deleteAll()
+        })
     }
     fun showUserMarkers(userName: String, visible: Boolean) {
+        Log.d(TAG, "Setting $userName to visibility: $visible")
         mExecutor.execute({
-            val posts = postDao.getUserPosts(userName).value
-            if (posts != null) {
-                for (post in posts) {
-                    post.visible = visible
-                    postDao.insert(post)
-                }
+            val user = userDao.getUser(userName)
+            user.visible = visible
+            val posts = postDao.getUserPosts(userName)
+            for (post in posts) {
+                Log.d(TAG, "Overwriting ${post.locationName}")
+                post.visible = visible
+                postDao.update(post)
             }
+            userDao.update(user)
         })
     }
 

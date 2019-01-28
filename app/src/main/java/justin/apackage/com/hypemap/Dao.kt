@@ -5,6 +5,7 @@ import android.arch.persistence.room.Dao
 import android.arch.persistence.room.Insert
 import android.arch.persistence.room.OnConflictStrategy.REPLACE
 import android.arch.persistence.room.Query
+import android.arch.persistence.room.Update
 
 @Dao
 interface PostDao {
@@ -12,10 +13,13 @@ interface PostDao {
     fun getPosts(): LiveData<List<Post>>
 
     @Query("SELECT * from posts WHERE userName = :userName")
-    fun getUserPosts(userName: String): LiveData<List<Post>>
+    fun getUserPosts(userName: String): List<Post>
 
     @Insert(onConflict = REPLACE)
     fun insert(postData: Post)
+
+    @Update
+    fun update(postData: Post)
 
     @Query("DELETE from posts")
     fun deleteAll()
@@ -26,21 +30,15 @@ interface UserDao {
     @Query("SELECT * from users")
     fun getUsers(): LiveData<List<User>>
 
+    @Query("SELECT * from users WHERE userName = :userName")
+    fun getUser(userName: String): User
+
     @Insert(onConflict = REPLACE)
     fun insert(user: User)
+
+    @Update
+    fun update(user: User)
 
     @Query("DELETE from users")
     fun deleteAll()
 }
-
-//@Dao
-//interface LocationDao {
-//    @Query("SELECT * from locations WHERE locationId = :locationId")
-//    fun getCoordinates(locationId: String): Location
-//
-//    @Insert(onConflict = REPLACE)
-//    fun insert(location: Location)
-//
-//    @Query("DELETE from locations")
-//    fun deleteAll()
-//}

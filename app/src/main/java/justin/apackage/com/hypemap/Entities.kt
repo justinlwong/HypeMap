@@ -18,4 +18,5 @@ data class Post (@PrimaryKey var id: String,
 
 @Entity(tableName = "users")
 data class User (@PrimaryKey var userName: String,
-    @ColumnInfo(name = "profilePicUrl") var profilePicUrl: String)
+    @ColumnInfo(name = "profilePicUrl") var profilePicUrl: String,
+    @ColumnInfo(name = "visible") var visible: Boolean)
