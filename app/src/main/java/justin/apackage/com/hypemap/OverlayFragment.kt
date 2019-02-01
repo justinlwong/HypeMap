@@ -52,7 +52,7 @@ class OverlayFragment : Fragment() {
 
         eView?.setOnEditorActionListener { v, actionId, event ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
-                mModel.addUser(eView.text.toString())
+                mModel.addUser(eView.text.toString().trim())
                 Toast.makeText(context, "Fetching user posts...", Toast.LENGTH_LONG).show()
             }
             return@setOnEditorActionListener false

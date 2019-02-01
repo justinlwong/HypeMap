@@ -14,6 +14,7 @@ data class Post (@PrimaryKey var id: String,
     @ColumnInfo(name = "postUrl") var postUrl: String,
     @ColumnInfo(name = "linkUrl") var linkUrl: String,
     @ColumnInfo(name = "caption") var caption: String,
+    @ColumnInfo(name = "timestamp") var timestamp: Long,
     @ColumnInfo(name = "visible") var visible: Boolean)
 
 @Entity(tableName = "users")

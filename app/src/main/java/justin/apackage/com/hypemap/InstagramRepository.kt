@@ -37,18 +37,24 @@ class InstagramRepository(application: Application) {
 
     fun updatePosts() {
         mExecutor.execute{
-            val usersList = userDao.getUsers().value
+            val usersList = userDao.getCurrentUsers()
+            val posts: MutableList<Post> = mutableListOf()
 
-            Observable.fromIterable(usersList!!.asIterable())
+            Observable.fromIterable(usersList.asIterable())
                 .flatMap { instagramService.getUserPage(it.userName)}
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.computation())
-                .subscribe({ response -> processUserProfileResponse(response) },
-                    { error -> Log.d(TAG, "getPosts error: $error") })
+                .subscribe({ response -> processUserProfileResponse(response, true, posts) },
+                    { error -> Log.d(TAG, "getPosts error: $error") },
+                    {
+                        for (post in posts) {
+                            postDao.insert(post)
+                        }
+                    })
         }
     }
 
-    private fun processUserProfileResponse(response: ResponseBody) {
+    private fun processUserProfileResponse(response: ResponseBody, isUpdate: Boolean, postsList: MutableList<Post>) {
         val html = response.string()
         if (html != null) {
             val document: Document = Jsoup.parse(html)
@@ -76,7 +82,6 @@ class InstagramRepository(application: Application) {
             val posts: JSONArray = user.getJSONObject("edge_owner_to_timeline_media")
                 .getJSONArray("edges")
 
-            val userPosts: MutableList<Post> = mutableListOf()
             for (i in 0..(posts.length() - 1)) {
                 val node = posts.getJSONObject(i)
                     .getJSONObject("node")
@@ -113,10 +118,11 @@ class InstagramRepository(application: Application) {
                         linkUrl = "https://www.instagram.com/p/${node
                             .getString("shortcode")}",
                         caption = captionText,
+                        timestamp = node.getLong("taken_at_timestamp"),
                         visible = true
                     )
 
-                    userPosts.add(newPost)
+                    postsList.add(newPost)
                 }
             }
 
@@ -127,23 +133,25 @@ class InstagramRepository(application: Application) {
                 visible = true
             )
 
-            userDao.insert(newUser)
+            if (!isUpdate) {
+                userDao.insert(newUser)
+            }
 
-            Observable.fromIterable(userPosts.asIterable())
+            Observable.fromIterable(postsList.asIterable())
                 .flatMap {
                     instagramService.getCoordinates(it.locationId)
                 }
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.computation())
                 .subscribe(
-                    { response -> processLocationResponse(response, userPosts)},
+                    { response -> processLocationResponse(response, postsList, isUpdate)},
                     { error -> Log.d(TAG, "location search error: $error")})
         } else {
             Log.e(TAG, "Request was bad")
         }
     }
 
-    private fun processLocationResponse(response: ResponseBody, posts: MutableList<Post>) {
+    private fun processLocationResponse(response: ResponseBody, posts: MutableList<Post>, isUpdate: Boolean) {
         // parse json
         val json = response.string()
         if (json != null) {
@@ -160,7 +168,9 @@ class InstagramRepository(application: Application) {
                 if (post.locationId == id) {
                     post.latitude = latitude
                     post.longitude = longitude
-                    postDao.insert(post)
+                    if (!isUpdate) {
+                        postDao.insert(post)
+                    }
                 }
             }
 
@@ -172,10 +182,11 @@ class InstagramRepository(application: Application) {
 
     fun addUser(userName: String) {
         mExecutor.execute{
+            val posts: MutableList<Post> = mutableListOf()
             instagramService.getUserPage(userName)
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.computation())
-                .subscribe({ response -> processUserProfileResponse(response) },
+                .subscribe({ response -> processUserProfileResponse(response, false, posts) },
                     { error ->
                         Log.d(TAG, "addUser error: $error")
                     })

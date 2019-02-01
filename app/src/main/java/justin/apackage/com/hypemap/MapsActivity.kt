@@ -19,6 +19,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
@@ -50,7 +51,6 @@ class MapsActivity :
         mOverlayFragment = OverlayFragment()
         val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
         transaction.replace(R.id.overlay_ui, mOverlayFragment)
-        transaction.addToBackStack(null)
         transaction.commit()
 
         postPopupBuilder = AlertDialog.Builder(this)
@@ -71,6 +71,7 @@ class MapsActivity :
         mModel.mMap = googleMap
         mModel.mMap.uiSettings.isZoomControlsEnabled = true
         mModel.mMap.setOnMarkerClickListener(this)
+        mModel.updateInstaData()
 
         mModel.getPosts().observe(this, Observer<List<Post>> { posts ->
             if (posts != null) {
@@ -78,7 +79,9 @@ class MapsActivity :
                 for (post in posts) {
                     val id = post.locationId
                     val name = post.locationName
-                    Log.d(TAG, "observing location id: $id and name: $name with coords: ${post.latitude}, ${post.longitude}")
+                    Log.d(
+                        TAG,
+                        "observing location id: $id and name: $name with coords: ${post.latitude}, ${post.longitude}")
                     if (post.visible) {
                         addMarkerAtLocation(
                             LatLng(post.latitude, post.longitude),
@@ -91,13 +94,19 @@ class MapsActivity :
         })
     }
 
-    private fun addMarkerAtLocation(location: LatLng, locationName: String, postData: Post) {
+    private fun addMarkerAtLocation(location: LatLng, locationName: String, postData: Post): Marker {
         val markerOptions = MarkerOptions().position(location)
             .title(locationName)
 
-        val mkr = mModel.mMap.addMarker(markerOptions)
+        if(((System.currentTimeMillis()/1000) - postData.timestamp) > 60*60*24)
+        {
+            //set marker color
+            markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
+        }
 
+        val mkr = mModel.mMap.addMarker(markerOptions)
         mkr.tag = postData
+        return mkr
     }
 
     private fun loadPopup(postUrl: String, linkUrl: String, userName: String, caption: String) {
