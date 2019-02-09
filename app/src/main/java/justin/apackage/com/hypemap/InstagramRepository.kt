@@ -31,7 +31,7 @@ class InstagramRepository(application: Application) {
         private const val TAG = "InstagramRepository"
     }
 
-    fun getPosts(): LiveData<List<Post>> {
+    fun getPosts(): LiveData<List<Post>?> {
          return postDao.getPosts()
     }
 
@@ -48,10 +48,19 @@ class InstagramRepository(application: Application) {
                     { error -> Log.d(TAG, "getPosts error: $error") },
                     {
                         for (post in posts) {
-                            postDao.insert(post)
+                            insertPost(post)
                         }
                     })
         }
+    }
+
+    private fun getCurrentUsersMap(): MutableMap<String, User> {
+        val users = userDao.getCurrentUsers()
+        val map: MutableMap<String, User> = mutableMapOf()
+        for (user in users) {
+            map[user.userName] = user
+        }
+        return map
     }
 
     private fun processUserProfileResponse(response: ResponseBody, isUpdate: Boolean, postsList: MutableList<Post>) {
@@ -78,6 +87,17 @@ class InstagramRepository(application: Application) {
                 .getJSONObject("user")
 
             val userName = user.getString("username")
+
+            if (!isUpdate) {
+                // Update or add user
+                val newUser = User(
+                    userName = userName,
+                    profilePicUrl = user.getString("profile_pic_url"),
+                    visible = true,
+                    colour = ((0..11).shuffled().first()*30).toFloat()
+                )
+                userDao.insert(newUser)
+            }
 
             val posts: JSONArray = user.getJSONObject("edge_owner_to_timeline_media")
                 .getJSONArray("edges")
@@ -119,22 +139,12 @@ class InstagramRepository(application: Application) {
                             .getString("shortcode")}",
                         caption = captionText,
                         timestamp = node.getLong("taken_at_timestamp"),
-                        visible = true
+                        visible = true,
+                        colour = 0f
                     )
 
                     postsList.add(newPost)
                 }
-            }
-
-            // Update or add user
-            val newUser = User(
-                userName = userName,
-                profilePicUrl = user.getString("profile_pic_url"),
-                visible = true
-            )
-
-            if (!isUpdate) {
-                userDao.insert(newUser)
             }
 
             Observable.fromIterable(postsList.asIterable())
@@ -148,6 +158,14 @@ class InstagramRepository(application: Application) {
                     { error -> Log.d(TAG, "location search error: $error")})
         } else {
             Log.e(TAG, "Request was bad")
+        }
+    }
+
+    @Synchronized fun insertPost(post: Post) {
+        val userEntry = getCurrentUsersMap()[post.userName]
+        if (userEntry != null) {
+            post.colour = userEntry.colour
+            postDao.insert(post)
         }
     }
 
@@ -169,7 +187,7 @@ class InstagramRepository(application: Application) {
                     post.latitude = latitude
                     post.longitude = longitude
                     if (!isUpdate) {
-                        postDao.insert(post)
+                        insertPost(post)
                     }
                 }
             }

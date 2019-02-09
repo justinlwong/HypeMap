@@ -10,7 +10,7 @@ class HypeMapViewModel (application: Application) : AndroidViewModel(application
     private val instaRepo: InstagramRepository = InstagramRepository(application)
     lateinit var mMap: GoogleMap
 
-    fun getPosts(): LiveData<List<Post>> {
+    fun getPosts(): LiveData<List<Post>?> {
         return instaRepo.getPosts()
     }
 

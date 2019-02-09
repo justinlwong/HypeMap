@@ -15,9 +15,11 @@ data class Post (@PrimaryKey var id: String,
     @ColumnInfo(name = "linkUrl") var linkUrl: String,
     @ColumnInfo(name = "caption") var caption: String,
     @ColumnInfo(name = "timestamp") var timestamp: Long,
-    @ColumnInfo(name = "visible") var visible: Boolean)
+    @ColumnInfo(name = "visible") var visible: Boolean,
+    @ColumnInfo(name = "colour") var colour: Float)
 
 @Entity(tableName = "users")
 data class User (@PrimaryKey var userName: String,
     @ColumnInfo(name = "profilePicUrl") var profilePicUrl: String,
-    @ColumnInfo(name = "visible") var visible: Boolean)
+    @ColumnInfo(name = "visible") var visible: Boolean,
+    @ColumnInfo(name ="colour") var colour: Float)

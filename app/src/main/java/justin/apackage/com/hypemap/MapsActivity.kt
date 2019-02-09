@@ -23,6 +23,8 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import java.util.*
+import kotlin.concurrent.schedule
 
 class MapsActivity :
         AppCompatActivity(),
@@ -39,16 +41,24 @@ class MapsActivity :
         private const val TAG = "MapsActivity"
     }
 
+
+    private fun callUpdateData() {
+        Timer("updateInstaData", false).schedule(delay = 0, period = 1000*60*30) {
+            mModel.updateInstaData()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         Log.d(TAG, "onCreate called")
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-        mOverlayFragment = OverlayFragment()
+        mOverlayFragment = OverlayFragment.newInstance()
         val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
         transaction.replace(R.id.overlay_ui, mOverlayFragment)
         transaction.commit()
@@ -71,10 +81,10 @@ class MapsActivity :
         mModel.mMap = googleMap
         mModel.mMap.uiSettings.isZoomControlsEnabled = true
         mModel.mMap.setOnMarkerClickListener(this)
-        mModel.updateInstaData()
+        //callUpdateData()
 
-        mModel.getPosts().observe(this, Observer<List<Post>> { posts ->
-            if (posts != null) {
+        mModel.getPosts().observe(this, Observer { posts ->
+            posts?.let{
                 mModel.mMap.clear()
                 for (post in posts) {
                     val id = post.locationId
@@ -97,12 +107,7 @@ class MapsActivity :
     private fun addMarkerAtLocation(location: LatLng, locationName: String, postData: Post): Marker {
         val markerOptions = MarkerOptions().position(location)
             .title(locationName)
-
-        if(((System.currentTimeMillis()/1000) - postData.timestamp) > 60*60*24)
-        {
-            //set marker color
-            markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
-        }
+            .icon(BitmapDescriptorFactory.defaultMarker(postData.colour))
 
         val mkr = mModel.mMap.addMarker(markerOptions)
         mkr.tag = postData
@@ -154,14 +159,14 @@ class MapsActivity :
         val caption = post.caption
 
         p0.showInfoWindow()
-        mModel.mMap.setPadding(0, 0, 0, 1500)
+        mModel.mMap.setPadding(0, 0, 0, 1300)
         val zoom = mModel.mMap.cameraPosition.zoom
         var duration = 100f
         if (zoom != 0f) {
-            duration = 100f * (12f / mModel.mMap.cameraPosition.zoom)
+            duration = 200f * (12f / mModel.mMap.cameraPosition.zoom)
         }
 
-        mModel.mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(p0.position, 12f), duration.toInt(), object : GoogleMap.CancelableCallback {
+        mModel.mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(p0.position, 16f), duration.toInt(), object : GoogleMap.CancelableCallback {
             override fun onCancel() {
                 loadPopup(postUrl, linkUrl, userName, caption)
             }

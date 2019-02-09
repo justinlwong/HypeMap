@@ -43,21 +43,38 @@ class OverlayFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val eView: EditText? = getView()?.findViewById(R.id.get_user_input)
         val cButton = Button(context)
+        val rButton = Button(context)
         val zOutButton: Button? = getView()?.findViewById(R.id.zoom_out_button)
         val usersListView: ListView? = getView()?.findViewById(R.id.users_list)
 
         cButton.text = "Clear"
         cButton.setTextColor(ResourcesCompat.getColor(context!!.resources, R.color.grey, null))
         cButton.setBackgroundColor(ResourcesCompat.getColor(context!!.resources, R.color.white, null))
+        cButton.setOnClickListener {
+            mModel.removeAll()
+        }
+
+        rButton.text = "Refresh"
+        rButton.setTextColor(ResourcesCompat.getColor(context!!.resources, R.color.grey, null))
+        rButton.setBackgroundColor(ResourcesCompat.getColor(context!!.resources, R.color.white, null))
+        rButton.setOnClickListener {
+            mModel.updateInstaData()
+        }
 
         eView?.setOnEditorActionListener { v, actionId, event ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
-                mModel.addUser(eView.text.toString().trim())
-                Toast.makeText(context, "Fetching user posts...", Toast.LENGTH_LONG).show()
+                val name: String = eView.text.toString().trim()
+                if (name != "") {
+                    mModel.addUser(name)
+                    Toast.makeText(context, "Fetching user posts...", Toast.LENGTH_LONG).show()
+                } else {
+                    Toast.makeText(context, "Please continue typing", Toast.LENGTH_SHORT).show()
+                }
             }
             return@setOnEditorActionListener false
         }
 
+        //usersListView?.addFooterView(rButton)
         usersListView?.addFooterView(cButton)
 
         zOutButton?.setOnClickListener {
