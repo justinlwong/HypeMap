@@ -26,6 +26,9 @@ interface PostDao {
 
     @Query("DELETE from posts WHERE userName = :userName")
     fun delete(userName: String)
+
+    @Query("SELECT * from posts WHERE id = :postId")
+    fun getPost(postId: String): List<Post>
 }
 
 @Dao

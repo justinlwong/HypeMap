@@ -81,7 +81,7 @@ class MapsActivity :
         mModel.mMap = googleMap
         mModel.mMap.uiSettings.isZoomControlsEnabled = true
         mModel.mMap.setOnMarkerClickListener(this)
-        //callUpdateData()
+        callUpdateData()
 
         mModel.getPosts().observe(this, Observer { posts ->
             posts?.let{

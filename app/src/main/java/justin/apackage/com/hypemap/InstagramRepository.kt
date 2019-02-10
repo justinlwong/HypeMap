@@ -126,24 +126,27 @@ class InstagramRepository(application: Application) {
                             .getString("text")
                     }
 
-                    val newPost = Post(
-                        id = node.getString("id"),
-                        userName = userName,
-                        locationName = location.getString("name"),
-                        locationId = location.getString("id"),
-                        longitude = 0.0,
-                        latitude = 0.0,
-                        postUrl = node
-                            .getString("thumbnail_src"),
-                        linkUrl = "https://www.instagram.com/p/${node
-                            .getString("shortcode")}",
-                        caption = captionText,
-                        timestamp = node.getLong("taken_at_timestamp"),
-                        visible = true,
-                        colour = 0f
-                    )
-
-                    postsList.add(newPost)
+                    val postId = node.getString("id")
+                    if (postDao.getPost(postId).isEmpty()) {
+                        Log.d(TAG, "Found new post")
+                        val newPost = Post(
+                            id = postId,
+                            userName = userName,
+                            locationName = location.getString("name"),
+                            locationId = location.getString("id"),
+                            longitude = 0.0,
+                            latitude = 0.0,
+                            postUrl = node
+                                .getString("thumbnail_src"),
+                            linkUrl = "https://www.instagram.com/p/${node
+                                .getString("shortcode")}",
+                            caption = captionText,
+                            timestamp = node.getLong("taken_at_timestamp"),
+                            visible = true,
+                            colour = 0f
+                        )
+                        postsList.add(newPost)
+                    }
                 }
             }
 
