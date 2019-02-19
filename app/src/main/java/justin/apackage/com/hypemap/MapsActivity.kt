@@ -23,8 +23,6 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
-import java.util.*
-import kotlin.concurrent.schedule
 
 class MapsActivity :
         AppCompatActivity(),
@@ -39,13 +37,6 @@ class MapsActivity :
 
     companion object {
         private const val TAG = "MapsActivity"
-    }
-
-
-    private fun callUpdateData() {
-        Timer("updateInstaData", false).schedule(delay = 0, period = 1000*60*30) {
-            mModel.updateInstaData()
-        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -81,7 +72,7 @@ class MapsActivity :
         mModel.mMap = googleMap
         mModel.mMap.uiSettings.isZoomControlsEnabled = true
         mModel.mMap.setOnMarkerClickListener(this)
-        callUpdateData()
+        mModel.updateInstaData()
 
         mModel.getPosts().observe(this, Observer { posts ->
             posts?.let{

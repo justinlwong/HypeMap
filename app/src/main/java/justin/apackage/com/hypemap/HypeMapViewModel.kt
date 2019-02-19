@@ -19,7 +19,7 @@ class HypeMapViewModel (application: Application) : AndroidViewModel(application
     }
 
     fun updateInstaData() {
-        instaRepo.updatePosts()
+        instaRepo.updatePostsPeriodically()
     }
 
     fun addUser(userName: String) {

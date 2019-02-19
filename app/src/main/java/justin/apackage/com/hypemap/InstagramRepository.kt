@@ -18,6 +18,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class InstagramRepository(application: Application) {
     private val gson: Gson by lazy { GsonBuilder().create()}
@@ -35,22 +36,33 @@ class InstagramRepository(application: Application) {
          return postDao.getPosts()
     }
 
-    fun updatePosts() {
+    fun updatePostsPeriodically() {
+        mExecutor.execute {
+            val scheduler = Schedulers.from(Executors.newSingleThreadExecutor())
+            val delay: Long = 0
+            Observable.interval(delay, 2, TimeUnit.MINUTES, scheduler)
+                .subscribe { n -> Log.d(TAG, "Updating periodically")
+                    updatePosts()
+                }
+        }
+    }
+
+    private fun updatePosts() {
         mExecutor.execute{
             val usersList = userDao.getCurrentUsers()
             val posts: MutableList<Post> = mutableListOf()
 
             Observable.fromIterable(usersList.asIterable())
-                .flatMap { instagramService.getUserPage(it.userName)}
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.computation())
-                .subscribe({ response -> processUserProfileResponse(response, true, posts) },
-                    { error -> Log.d(TAG, "getPosts error: $error") },
-                    {
-                        for (post in posts) {
-                            insertPost(post)
-                        }
-                    })
+                        .flatMap { instagramService.getUserPage(it.userName)}
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(Schedulers.computation())
+                        .subscribe({ response -> processUserProfileResponse(response, true, posts) },
+                            { error -> Log.d(TAG, "getPosts error: $error") },
+                            {
+                                for (post in posts) {
+                                    insertPost(post)
+                                }
+                            })
         }
     }
 
