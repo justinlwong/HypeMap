@@ -57,12 +57,7 @@ class InstagramRepository(application: Application) {
                         .subscribeOn(Schedulers.io())
                         .observeOn(Schedulers.computation())
                         .subscribe({ response -> processUserProfileResponse(response, true, posts) },
-                            { error -> Log.d(TAG, "getPosts error: $error") },
-                            {
-                                for (post in posts) {
-                                    insertPost(post)
-                                }
-                            })
+                            { error -> Log.d(TAG, "getPosts error: $error") })
         }
     }
 
@@ -169,7 +164,7 @@ class InstagramRepository(application: Application) {
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.computation())
                 .subscribe(
-                    { response -> processLocationResponse(response, postsList, isUpdate)},
+                    { response -> processLocationResponse(response, postsList)},
                     { error -> Log.d(TAG, "location search error: $error")})
         } else {
             Log.e(TAG, "Request was bad")
@@ -184,7 +179,7 @@ class InstagramRepository(application: Application) {
         }
     }
 
-    private fun processLocationResponse(response: ResponseBody, posts: MutableList<Post>, isUpdate: Boolean) {
+    private fun processLocationResponse(response: ResponseBody, posts: MutableList<Post>) {
         // parse json
         val json = response.string()
         if (json != null) {
@@ -201,9 +196,7 @@ class InstagramRepository(application: Application) {
                 if (post.locationId == id) {
                     post.latitude = latitude
                     post.longitude = longitude
-                    if (!isUpdate) {
-                        insertPost(post)
-                    }
+                    insertPost(post)
                 }
             }
 
