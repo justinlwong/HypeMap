@@ -72,6 +72,10 @@ class MapsActivity :
         mModel.mMap = googleMap
         mModel.mMap.uiSettings.isZoomControlsEnabled = true
         mModel.mMap.setOnMarkerClickListener(this)
+
+        // Set to Toronto
+        mModel.mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(43.6712698,-79.3819235), 1f))
+
         mModel.updateInstaData()
 
         mModel.getPosts().observe(this, Observer { posts ->
@@ -106,8 +110,9 @@ class MapsActivity :
     }
 
     private fun loadPopup(postUrl: String, linkUrl: String, userName: String, caption: String) {
+        Log.d(TAG, "loadPopup called")
+        postPopup.dismiss()
         wv.loadUrl(postUrl)
-        postPopup.hide()
         postPopup.setTitle(userName)
         var captionStr: String = caption
         if (caption.length > 100) {
@@ -126,15 +131,14 @@ class MapsActivity :
         postPopup.setButton(
             DialogInterface.BUTTON_NEGATIVE,
             "Close")
-        { _, _ ->
-            postPopup.hide()
-        }
-
-        postPopup.setOnDismissListener{
+        { dialog, _ ->
+            dialog.dismiss()
             mModel.mMap.setPadding(0, 0, 0, 0)
         }
 
+        postPopup.create()
         postPopup.show()
+        Log.d(TAG, "Showing popup")
         val lp = WindowManager.LayoutParams()
         lp.copyFrom(postPopup.window?.attributes)
         lp.gravity = Gravity.BOTTOM
@@ -150,6 +154,7 @@ class MapsActivity :
         val caption = post.caption
 
         p0.showInfoWindow()
+
         mModel.mMap.setPadding(0, 0, 0, 1300)
         val zoom = mModel.mMap.cameraPosition.zoom
         var duration = 100f
@@ -159,10 +164,10 @@ class MapsActivity :
 
         mModel.mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(p0.position, 16f), duration.toInt(), object : GoogleMap.CancelableCallback {
             override fun onCancel() {
-                loadPopup(postUrl, linkUrl, userName, caption)
             }
 
             override fun onFinish() {
+                Log.d(TAG, "Finished animation, Post info: $caption, $userName")
                 loadPopup(postUrl, linkUrl, userName, caption)
             }
         })

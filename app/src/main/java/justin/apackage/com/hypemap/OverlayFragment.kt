@@ -41,29 +41,22 @@ class OverlayFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val eView: EditText? = getView()?.findViewById(R.id.get_user_input)
-        val cButton = Button(context)
-        val rButton = Button(context)
-        val zOutButton: Button? = getView()?.findViewById(R.id.zoom_out_button)
+        val getUserEditText: EditText? = getView()?.findViewById(R.id.get_user_input)
+        val clearButton = Button(context)
+        val cityZoomButton: Button? = getView()?.findViewById(R.id.city_zoom_button);
+        val worldZoomButton: Button? = getView()?.findViewById(R.id.world_zoom_button)
         val usersListView: ListView? = getView()?.findViewById(R.id.users_list)
 
-        cButton.text = "Clear"
-        cButton.setTextColor(ResourcesCompat.getColor(context!!.resources, R.color.grey, null))
-        cButton.setBackgroundColor(ResourcesCompat.getColor(context!!.resources, R.color.white, null))
-        cButton.setOnClickListener {
+        clearButton.text = "Clear"
+        clearButton.setTextColor(ResourcesCompat.getColor(context!!.resources, R.color.grey, null))
+        clearButton.setBackgroundColor(ResourcesCompat.getColor(context!!.resources, R.color.white, null))
+        clearButton.setOnClickListener {
             mModel.removeAll()
         }
 
-        rButton.text = "Refresh"
-        rButton.setTextColor(ResourcesCompat.getColor(context!!.resources, R.color.grey, null))
-        rButton.setBackgroundColor(ResourcesCompat.getColor(context!!.resources, R.color.white, null))
-        rButton.setOnClickListener {
-            mModel.updateInstaData()
-        }
-
-        eView?.setOnEditorActionListener { v, actionId, event ->
+        getUserEditText?.setOnEditorActionListener { v, actionId, event ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
-                val name: String = eView.text.toString().trim()
+                val name: String = getUserEditText.text.toString().trim()
                 if (name != "") {
                     mModel.addUser(name)
                     Toast.makeText(context, "Fetching user posts...", Toast.LENGTH_LONG).show()
@@ -74,11 +67,14 @@ class OverlayFragment : Fragment() {
             return@setOnEditorActionListener false
         }
 
-        //usersListView?.addFooterView(rButton)
-        usersListView?.addFooterView(cButton)
+        usersListView?.addFooterView(clearButton)
 
-        zOutButton?.setOnClickListener {
-            mModel.mMap.animateCamera(CameraUpdateFactory.zoomBy(-14.0f))
+        worldZoomButton?.setOnClickListener {
+            mModel.mMap.animateCamera(CameraUpdateFactory.zoomTo(1f))
+        }
+
+        cityZoomButton?.setOnClickListener {
+            mModel.mMap.animateCamera(CameraUpdateFactory.zoomTo(12f))
         }
 
         mModel.getUsers().observe(this, Observer<List<User>> { usersList ->
@@ -89,13 +85,13 @@ class OverlayFragment : Fragment() {
                     usersList)
                 usersListView?.adapter = usersListAdapter
                 if (usersList.isEmpty()) {
-                    usersListView?.removeFooterView(cButton)
+                    usersListView?.removeFooterView(clearButton)
                 } else {
                     if (usersListView?.footerViewsCount == 0) {
-                        cButton.setOnClickListener {
+                        clearButton.setOnClickListener {
                             mModel.removeAll()
                         }
-                        usersListView.addFooterView(cButton)
+                        usersListView.addFooterView(clearButton)
                     }
                 }
             }

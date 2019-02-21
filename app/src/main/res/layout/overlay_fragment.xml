@@ -23,16 +23,30 @@
                     android:imeOptions="actionDone"
                     android:hint="Add new user to follow"/>
 
-            <Button
+            <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="50dp"
                     android:layout_alignParentBottom="true"
-                    android:layout_centerHorizontal="true"
-                    android:backgroundTint="@color/white"
-                    android:textColor="@color/grey"
-                    android:id="@+id/zoom_out_button"
-                    android:text="Zoom out"/>
+                    android:layout_centerHorizontal="true">
+
+                <Button
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:backgroundTint="@color/white"
+                        android:textColor="@color/grey"
+                        android:id="@+id/city_zoom_button"
+                        android:text="City"/>
+
+                <Button
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:backgroundTint="@color/white"
+                        android:textColor="@color/grey"
+                        android:id="@+id/world_zoom_button"
+                        android:text="World"/>
+
+            </LinearLayout>
 
             <ListView
                     android:layout_width="120dp"
