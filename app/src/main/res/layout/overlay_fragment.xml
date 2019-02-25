@@ -35,6 +35,14 @@
                         android:layout_height="wrap_content"
                         android:backgroundTint="@color/white"
                         android:textColor="@color/grey"
+                        android:id="@+id/local_zoom_button"
+                        android:text="Local"/>
+
+                <Button
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:backgroundTint="@color/white"
+                        android:textColor="@color/grey"
                         android:id="@+id/city_zoom_button"
                         android:text="City"/>
 

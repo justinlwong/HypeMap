@@ -43,7 +43,8 @@ class OverlayFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val getUserEditText: EditText? = getView()?.findViewById(R.id.get_user_input)
         val clearButton = Button(context)
-        val cityZoomButton: Button? = getView()?.findViewById(R.id.city_zoom_button);
+        val localZoomButton: Button? = getView()?.findViewById(R.id.local_zoom_button)
+        val cityZoomButton: Button? = getView()?.findViewById(R.id.city_zoom_button)
         val worldZoomButton: Button? = getView()?.findViewById(R.id.world_zoom_button)
         val usersListView: ListView? = getView()?.findViewById(R.id.users_list)
 
@@ -75,6 +76,10 @@ class OverlayFragment : Fragment() {
 
         cityZoomButton?.setOnClickListener {
             mModel.mMap.animateCamera(CameraUpdateFactory.zoomTo(12f))
+        }
+
+        localZoomButton?.setOnClickListener {
+            mModel.mMap.animateCamera(CameraUpdateFactory.zoomTo(16f))
         }
 
         mModel.getUsers().observe(this, Observer<List<User>> { usersList ->

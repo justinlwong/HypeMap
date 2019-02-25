@@ -3,7 +3,6 @@ package justin.apackage.com.hypemap
 import android.app.AlertDialog
 import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
-import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -30,9 +29,6 @@ class MapsActivity :
         GoogleMap.OnMarkerClickListener {
     
     private lateinit var mOverlayFragment: OverlayFragment
-    private lateinit var postPopupBuilder : AlertDialog.Builder
-    private lateinit var postPopup : AlertDialog
-    private lateinit var wv : WebView
     private val mModel by lazy {ViewModelProviders.of(this).get(HypeMapViewModel::class.java)}
 
     companion object {
@@ -53,19 +49,6 @@ class MapsActivity :
         val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
         transaction.replace(R.id.overlay_ui, mOverlayFragment)
         transaction.commit()
-
-        postPopupBuilder = AlertDialog.Builder(this)
-        wv = WebView(this)
-        wv.webViewClient = object : WebViewClient() {
-            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-                return false
-            }
-        }
-        wv.setInitialScale(1)
-        wv.settings.useWideViewPort = true
-        wv.settings.loadWithOverviewMode = true
-        postPopupBuilder.setView(wv)
-        postPopup = postPopupBuilder.create()
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -109,18 +92,38 @@ class MapsActivity :
         return mkr
     }
 
-    private fun loadPopup(postUrl: String, linkUrl: String, userName: String, caption: String) {
-        Log.d(TAG, "loadPopup called")
-        postPopup.dismiss()
-        wv.loadUrl(postUrl)
-        postPopup.setTitle(userName)
+    private fun getTrimmedCaption(caption: String): String {
         var captionStr: String = caption
         if (caption.length > 100) {
             captionStr = caption.substring(0, 100)
         }
-        postPopup.setMessage(captionStr)
-        postPopup.setButton(
-            DialogInterface.BUTTON_NEUTRAL,
+        return captionStr
+    }
+
+    private fun createWebView(url: String): WebView{
+        val webView = WebView(this)
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                return false
+            }
+        }
+
+        webView.setInitialScale(1)
+        webView.settings.useWideViewPort = true
+        webView.settings.loadWithOverviewMode = true
+        webView.loadUrl(url)
+
+        return webView
+    }
+
+    private fun showPopup(postUrl: String, linkUrl: String, userName: String, caption: String) {
+        val postPopupBuilder = AlertDialog.Builder(this)
+
+        postPopupBuilder.setView(createWebView(postUrl))
+        postPopupBuilder.setTitle(userName)
+
+        postPopupBuilder.setMessage(getTrimmedCaption(caption))
+        postPopupBuilder.setNeutralButton(
             "View")
         { _, _ ->
             val i = Intent(Intent.ACTION_VIEW)
@@ -128,49 +131,62 @@ class MapsActivity :
             startActivity(i)
         }
 
-        postPopup.setButton(
-            DialogInterface.BUTTON_NEGATIVE,
+        postPopupBuilder.setNegativeButton(
             "Close")
         { dialog, _ ->
             dialog.dismiss()
+        }
+
+        postPopupBuilder.setOnDismissListener {
             mModel.mMap.setPadding(0, 0, 0, 0)
         }
 
-        postPopup.create()
-        postPopup.show()
-        Log.d(TAG, "Showing popup")
-        val lp = WindowManager.LayoutParams()
-        lp.copyFrom(postPopup.window?.attributes)
-        lp.gravity = Gravity.BOTTOM
+        val postPopup: AlertDialog = postPopupBuilder.create()
 
-        postPopup.window?.attributes = lp
+        if (postPopup.isShowing) {
+            postPopup.dismiss()
+        } else {
+            postPopup.window?.run{
+                val lp = WindowManager.LayoutParams()
+                lp.copyFrom(attributes)
+                lp.gravity = Gravity.BOTTOM
+                //setDimAmount(0.0f)
+                attributes = lp
+            }
+
+            postPopup.show()
+            Log.d(TAG, "Showing popup")
+        }
     }
 
     override fun onMarkerClick(p0: Marker?) : Boolean {
-        val post = p0?.tag as Post
-        val postUrl = post.postUrl
-        val linkUrl = post.linkUrl
-        val userName = post.userName
-        val caption = post.caption
+        p0?.let { marker ->
+            marker.showInfoWindow()
 
-        p0.showInfoWindow()
+            mModel.mMap.setPadding(0, 0, 0, 1300)
+            val zoom = mModel.mMap.cameraPosition.zoom
+            var duration = 100f
+            if (zoom != 0f) {
+                duration = 200f * (12f / mModel.mMap.cameraPosition.zoom)
+            }
 
-        mModel.mMap.setPadding(0, 0, 0, 1300)
-        val zoom = mModel.mMap.cameraPosition.zoom
-        var duration = 100f
-        if (zoom != 0f) {
-            duration = 200f * (12f / mModel.mMap.cameraPosition.zoom)
+            mModel.mMap.animateCamera(
+                CameraUpdateFactory.newLatLngZoom(marker.position, 16f),
+                duration.toInt(),
+                object : GoogleMap.CancelableCallback {
+                    override fun onCancel() {
+                    }
+
+                    override fun onFinish() {
+                        val tag: Post = marker.tag as Post
+                        tag.run {
+                            Log.d(TAG, "Finished animation, Post info: $caption, $userName")
+                            showPopup(postUrl, linkUrl, userName, caption)
+                        }
+
+                    }
+                })
         }
-
-        mModel.mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(p0.position, 16f), duration.toInt(), object : GoogleMap.CancelableCallback {
-            override fun onCancel() {
-            }
-
-            override fun onFinish() {
-                Log.d(TAG, "Finished animation, Post info: $caption, $userName")
-                loadPopup(postUrl, linkUrl, userName, caption)
-            }
-        })
         return true
     }
 }
