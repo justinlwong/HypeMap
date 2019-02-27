@@ -29,15 +29,18 @@ class MapsActivity :
         AppCompatActivity(),
         OnMapReadyCallback,
         GoogleMap.OnMarkerClickListener,
-        GoogleMap.OnCameraMoveListener {
+        GoogleMap.OnCameraMoveListener,
+        GoogleMap.OnMapClickListener{
 
-    private lateinit var mOverlayFragment: OverlayFragment
-    private val mModel by lazy {ViewModelProviders.of(this).get(HypeMapViewModel::class.java)}
+    private lateinit var overlayFragment: OverlayFragment
+    private val viewModel by lazy {ViewModelProviders.of(this).get(HypeMapViewModel::class.java)}
     private lateinit var webView: WebView
     private lateinit var popUp: AlertDialog
     private val iconFactory by lazy{IconGenerator(this)}
     private val markers: MutableList<Marker> = mutableListOf()
     private val infoMarkers: MutableList<Marker> = mutableListOf()
+    private var isShowingInfo = false
+    private var curZoom = 0f
 
     companion object {
         private const val TAG = "MapsActivity"
@@ -53,9 +56,9 @@ class MapsActivity :
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-        mOverlayFragment = OverlayFragment.newInstance()
+        overlayFragment = OverlayFragment.newInstance()
         val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
-        transaction.replace(R.id.overlay_ui, mOverlayFragment)
+        transaction.replace(R.id.overlay_ui, overlayFragment)
         transaction.commit()
 
         webView = createWebView()
@@ -63,20 +66,26 @@ class MapsActivity :
         iconFactory.setTextAppearance(R.style.TextInfoWindow)
     }
 
+    private fun addListeners() {
+        viewModel.mMap.setOnMarkerClickListener(this)
+        viewModel.mMap.setOnCameraMoveListener(this)
+        viewModel.mMap.setOnMapClickListener(this)
+    }
+
     override fun onMapReady(googleMap: GoogleMap) {
-        mModel.mMap = googleMap
-        mModel.mMap.uiSettings.isZoomControlsEnabled = true
-        mModel.mMap.setOnMarkerClickListener(this)
-        mModel.mMap.setOnCameraMoveListener(this)
+        viewModel.mMap = googleMap
+        viewModel.mMap.uiSettings.isZoomControlsEnabled = true
+
+        addListeners()
 
         // Set to Toronto
-        mModel.mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(43.6712698,-79.3819235), 1f))
+        viewModel.mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(43.6712698,-79.3819235), 1f))
 
-        mModel.updateInstaData()
+        viewModel.updateInstaData()
 
-        mModel.getPosts().observe(this, Observer { posts ->
+        viewModel.getPosts().observe(this, Observer { posts ->
             posts?.let{
-                mModel.mMap.clear()
+                viewModel.mMap.clear()
                 markers.clear()
                 infoMarkers.clear()
                 for (post in posts) {
@@ -102,11 +111,11 @@ class MapsActivity :
         val pinMarkerOptions = baseMarkerOptions
             .icon(BitmapDescriptorFactory.defaultMarker(postData.colour))
 
-        val mkr = mModel.mMap.addMarker(pinMarkerOptions)
+        val mkr = viewModel.mMap.addMarker(pinMarkerOptions)
         mkr.tag = postData
         markers.add(mkr)
 
-        val infoMkr = mModel.mMap.addMarker(baseMarkerOptions.anchor(0.5f, 2.25f))
+        val infoMkr = viewModel.mMap.addMarker(baseMarkerOptions.anchor(0.5f, 2.25f))
         infoMkr.setIcon(BitmapDescriptorFactory.fromBitmap(iconFactory.makeIcon(locationName)))
         infoMkr.tag = postData
         infoMkr.isVisible = false
@@ -149,7 +158,7 @@ class MapsActivity :
         }
 
         postPopupBuilder.setOnDismissListener {
-            mModel.mMap.setPadding(0, 0, 0, 0)
+            viewModel.mMap.setPadding(0, 0, 0, 0)
         }
 
         return postPopupBuilder.create()
@@ -187,14 +196,14 @@ class MapsActivity :
 
     override fun onMarkerClick(p0: Marker?) : Boolean {
         p0?.let { marker ->
-            mModel.mMap.setPadding(0, 0, 0, 1300)
-            val zoom = mModel.mMap.cameraPosition.zoom
+            viewModel.mMap.setPadding(0, 0, 0, 1300)
+            val zoom = viewModel.mMap.cameraPosition.zoom
             var duration = 100f
             if (zoom != 0f) {
-                duration = 300f * (12f / mModel.mMap.cameraPosition.zoom)
+                duration = 300f * (12f / viewModel.mMap.cameraPosition.zoom)
             }
 
-            mModel.mMap.animateCamera(
+            viewModel.mMap.animateCamera(
                 CameraUpdateFactory.newLatLngZoom(marker.position, 16f),
                 duration.toInt(),
                 object : GoogleMap.CancelableCallback {
@@ -217,21 +226,28 @@ class MapsActivity :
     }
 
     private fun showInfoMarkers(show: Boolean) {
+        isShowingInfo = show
         for (infoMarker in infoMarkers) {
             infoMarker.isVisible = show
         }
     }
 
     private fun updateInfoBasedOnZoom() {
-        val zoom = mModel.mMap.cameraPosition.zoom
-        when {
-            zoom > 14f -> showInfoMarkers(true)
-            else -> showInfoMarkers(false)
+        val zoom = viewModel.mMap.cameraPosition.zoom
+        if (curZoom != zoom) {
+            curZoom = zoom
+            when {
+                zoom > 12f -> showInfoMarkers(true)
+                else -> showInfoMarkers(isShowingInfo)
+            }
         }
     }
 
     override fun onCameraMove() {
-        Log.d(TAG, "Camera moved")
         updateInfoBasedOnZoom()
+    }
+
+    override fun onMapClick(p0: LatLng?) {
+        showInfoMarkers(!isShowingInfo)
     }
 }
