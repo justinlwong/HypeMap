@@ -155,10 +155,14 @@ class MapsActivity :
         return postPopupBuilder.create()
     }
 
+    @Synchronized
     private fun showPopup(postUrl: String, linkUrl: String, userName: String, caption: String) {
+        if (popUp.isShowing) {
+            popUp.dismiss()
+        }
+
         webView.loadUrl(postUrl)
         popUp.setTitle(userName)
-
         popUp.setMessage(getTrimmedCaption(caption))
         popUp.setButton(
             DialogInterface.BUTTON_NEUTRAL,
@@ -169,20 +173,16 @@ class MapsActivity :
             startActivity(i)
         }
 
-        if (popUp.isShowing) {
-            popUp.dismiss()
-        } else {
-            popUp.window?.run{
-                val lp = WindowManager.LayoutParams()
-                lp.copyFrom(attributes)
-                lp.gravity = Gravity.BOTTOM
-                //setDimAmount(0.0f)
-                attributes = lp
-            }
-
-            popUp.show()
-            Log.d(TAG, "Showing popup")
+        popUp.window?.run{
+            val lp = WindowManager.LayoutParams()
+            lp.copyFrom(attributes)
+            lp.gravity = Gravity.BOTTOM
+            //setDimAmount(0.0f)
+            attributes = lp
         }
+
+        popUp.show()
+        Log.d(TAG, "Showing popup")
     }
 
     override fun onMarkerClick(p0: Marker?) : Boolean {
@@ -202,10 +202,12 @@ class MapsActivity :
                     }
 
                     override fun onFinish() {
-                        val tag: Post = marker.tag as Post
-                        tag.run {
-                            Log.d(TAG, "Finished animation, Post info: $caption, $userName")
-                            showPopup(postUrl, linkUrl, userName, caption)
+                        marker.tag?.let { tag ->
+                            val post: Post = tag as Post
+                            post.run {
+                                Log.d(TAG, "Finished animation, Post info: $caption, $userName")
+                                showPopup(postUrl, linkUrl, userName, caption)
+                            }
                         }
 
                     }
