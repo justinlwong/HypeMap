@@ -1,8 +1,11 @@
 package justin.apackage.com.hypemap
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
+import android.support.design.widget.FloatingActionButton
 import android.support.v4.app.Fragment
 import android.support.v4.content.res.ResourcesCompat
 import android.view.LayoutInflater
@@ -46,6 +49,7 @@ class OverlayFragment : Fragment() {
         val localZoomButton: Button? = getView()?.findViewById(R.id.local_zoom_button)
         val cityZoomButton: Button? = getView()?.findViewById(R.id.city_zoom_button)
         val worldZoomButton: Button? = getView()?.findViewById(R.id.world_zoom_button)
+        val menuLaunchButton: FloatingActionButton? = getView()?.findViewById(R.id.menu_launch_button)
         val usersListView: ListView? = getView()?.findViewById(R.id.users_list)
 
         clearButton.text = "Clear"
@@ -80,6 +84,36 @@ class OverlayFragment : Fragment() {
 
         localZoomButton?.setOnClickListener {
             mModel.mMap.animateCamera(CameraUpdateFactory.zoomTo(16f))
+        }
+
+        menuLaunchButton?.setOnClickListener {
+            usersListView?.run {
+                when (visibility) {
+                    View.VISIBLE -> {
+                        animate()
+                            .alpha(0f)
+                            .setDuration(500)
+                            .setListener(object : AnimatorListenerAdapter() {
+                                override fun onAnimationEnd(animation: Animator) {
+                                    visibility = View.GONE
+                                }
+                            }).start()
+                    }
+
+                    View.GONE -> {
+                        visibility = View.VISIBLE
+                        alpha = 0f
+                        animate()
+                            .alpha(1f)
+                            .setDuration(500)
+                            .setListener(object : AnimatorListenerAdapter() {
+                                override fun onAnimationEnd(animation: Animator) {
+                                    visibility = View.VISIBLE
+                                }
+                            }).start()
+                    }
+                }
+            }
         }
 
         mModel.getUsers().observe(this, Observer<List<User>> { usersList ->

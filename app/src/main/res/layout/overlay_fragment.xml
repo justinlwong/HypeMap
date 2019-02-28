@@ -3,68 +3,87 @@
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="match_parent" xmlns:app="http://schemas.android.com/apk/res-auto"
         tools:context=".OverlayFragment">
 
-        <RelativeLayout android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:focusable="true"
-                        android:focusableInTouchMode="true">
+    <RelativeLayout android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true">
 
-            <EditText
+        <EditText
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:padding="5dp"
+                android:layout_alignParentStart="true"
+                android:id="@+id/get_user_input"
+                android:background="@color/white"
+                android:inputType="text"
+                android:imeOptions="actionDone"
+                android:hint="Add new user to follow"/>
+
+        <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="50dp"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true">
+
+            <Button
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_margin="5dp"
-                    android:padding="5dp"
-                    android:layout_alignParentLeft="true"
-                    android:id="@+id/get_user_input"
-                    android:background="@color/white"
-                    android:inputType="text"
-                    android:imeOptions="actionDone"
-                    android:hint="Add new user to follow"/>
+                    android:backgroundTint="@color/white"
+                    android:textColor="@color/grey"
+                    android:id="@+id/local_zoom_button"
+                    android:text="Local"/>
 
-            <LinearLayout
+            <Button
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="50dp"
-                    android:layout_alignParentBottom="true"
-                    android:layout_centerHorizontal="true">
+                    android:backgroundTint="@color/white"
+                    android:textColor="@color/grey"
+                    android:id="@+id/city_zoom_button"
+                    android:text="City"/>
 
-                <Button
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:backgroundTint="@color/white"
-                        android:textColor="@color/grey"
-                        android:id="@+id/local_zoom_button"
-                        android:text="Local"/>
+            <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:backgroundTint="@color/white"
+                    android:textColor="@color/grey"
+                    android:id="@+id/world_zoom_button"
+                    android:text="World"/>
 
-                <Button
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:backgroundTint="@color/white"
-                        android:textColor="@color/grey"
-                        android:id="@+id/city_zoom_button"
-                        android:text="City"/>
+        </LinearLayout>
 
-                <Button
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:backgroundTint="@color/white"
-                        android:textColor="@color/grey"
-                        android:id="@+id/world_zoom_button"
-                        android:text="World"/>
-
-            </LinearLayout>
+        <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingLeft="5dp"
+                android:paddingBottom="100dp">
 
             <ListView
                     android:layout_width="120dp"
                     android:layout_height="wrap_content"
                     android:layout_margin="5dp"
                     android:background="@color/white"
-                    android:layout_alignParentRight="true"
+                    android:layout_alignParentStart="true"
                     android:layout_centerVertical="true"
                     android:id="@+id/users_list"/>
 
+            <android.support.design.widget.FloatingActionButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentBottom="true"
+                    android:backgroundTint="@color/white"
+                    app:borderWidth="0dp"
+                    android:tint="@color/grey"
+                    android:src="@android:drawable/ic_input_add"
+                    android:id="@+id/menu_launch_button" />
+
         </RelativeLayout>
+
+    </RelativeLayout>
 
 </FrameLayout>
