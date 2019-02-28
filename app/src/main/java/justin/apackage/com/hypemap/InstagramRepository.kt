@@ -175,6 +175,7 @@ class InstagramRepository(application: Application) {
         val userEntry = getCurrentUsersMap()[post.userName]
         if (userEntry != null) {
             post.colour = userEntry.colour
+            post.visible = userEntry.visible
             postDao.insert(post)
         }
     }
