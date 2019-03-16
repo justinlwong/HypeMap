@@ -18,6 +18,10 @@ class HypeMapViewModel (application: Application) : AndroidViewModel(application
         instaRepo.showUserMarkers(userName, visible)
     }
 
+    fun filterMarkersByTime(timeThreshold: Long) {
+        instaRepo.filterMarkersByTime(timeThreshold)
+    }
+
     fun updateInstaData() {
         instaRepo.updatePostsPeriodically()
     }

@@ -238,6 +238,7 @@ class InstagramRepository(application: Application) {
             userDao.deleteAll()
         }
     }
+
     fun showUserMarkers(userName: String, visible: Boolean) {
         Log.d(TAG, "Setting $userName to visibility: $visible")
         mExecutor.execute{
@@ -250,6 +251,26 @@ class InstagramRepository(application: Application) {
                 postDao.update(post)
             }
             userDao.update(user)
+        }
+    }
+
+    fun filterMarkersByTime(timeThreshold: Long) {
+        mExecutor.execute {
+            val users = userDao.getCurrentUsers()
+            for (user in users) {
+                val posts = postDao.getUserPosts(user.userName)
+                for (post in posts) {
+                    Log.d(TAG, "Overwriting ${post.locationName}")
+                    val postTime = post.timestamp
+                    if (postTime < timeThreshold) {
+                        post.visible = false
+                    } else {
+                        post.visible = user.visible
+                    }
+                    postDao.update(post)
+                }
+                userDao.update(user)
+            }
         }
     }
 

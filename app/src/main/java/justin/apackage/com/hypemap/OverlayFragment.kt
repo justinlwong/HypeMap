@@ -7,15 +7,11 @@ import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.support.v4.app.Fragment
-import android.support.v4.content.res.ResourcesCompat
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
-import android.widget.Button
-import android.widget.EditText
-import android.widget.ListView
-import android.widget.Toast
+import android.widget.*
 import com.google.android.gms.maps.CameraUpdateFactory
 
 
@@ -45,18 +41,24 @@ class OverlayFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val getUserEditText: EditText? = getView()?.findViewById(R.id.get_user_input)
-        val clearButton = Button(context)
+        val inflater = LayoutInflater.from(context)
+        val footerLayout = inflater.inflate(R.layout.list_footer, null, false)
+        val showRecentCheckBox: CheckBox? = footerLayout.findViewById(R.id.show_recent_button)
         val localZoomButton: Button? = getView()?.findViewById(R.id.local_zoom_button)
         val cityZoomButton: Button? = getView()?.findViewById(R.id.city_zoom_button)
         val worldZoomButton: Button? = getView()?.findViewById(R.id.world_zoom_button)
         val menuLaunchButton: FloatingActionButton? = getView()?.findViewById(R.id.menu_launch_button)
         val usersListView: ListView? = getView()?.findViewById(R.id.users_list)
 
-        clearButton.text = "Clear"
-        clearButton.setTextColor(ResourcesCompat.getColor(context!!.resources, R.color.grey, null))
-        clearButton.setBackgroundColor(ResourcesCompat.getColor(context!!.resources, R.color.white, null))
-        clearButton.setOnClickListener {
-            mModel.removeAll()
+        showRecentCheckBox?.setOnCheckedChangeListener { buttonView, isChecked ->
+            val dayInSeconds: Long = 60 * 60 * 24
+            if (isChecked) {
+                val threeDaysAgoTime = System.currentTimeMillis()/1000 - 3*dayInSeconds
+                mModel.filterMarkersByTime(threeDaysAgoTime)
+            } else {
+                val thirtyDaysAgoTime = System.currentTimeMillis()/1000 - 30*dayInSeconds
+                mModel.filterMarkersByTime(thirtyDaysAgoTime)
+            }
         }
 
         getUserEditText?.setOnEditorActionListener { v, actionId, event ->
@@ -72,7 +74,7 @@ class OverlayFragment : Fragment() {
             return@setOnEditorActionListener false
         }
 
-        usersListView?.addFooterView(clearButton)
+        usersListView?.addFooterView(showRecentCheckBox)
 
         worldZoomButton?.setOnClickListener {
             mModel.mMap.animateCamera(CameraUpdateFactory.zoomTo(1f))
@@ -124,13 +126,10 @@ class OverlayFragment : Fragment() {
                     usersList)
                 usersListView?.adapter = usersListAdapter
                 if (usersList.isEmpty()) {
-                    usersListView?.removeFooterView(clearButton)
+                    usersListView?.removeFooterView(showRecentCheckBox)
                 } else {
                     if (usersListView?.footerViewsCount == 0) {
-                        clearButton.setOnClickListener {
-                            mModel.removeAll()
-                        }
-                        usersListView.addFooterView(clearButton)
+                        usersListView.addFooterView(showRecentCheckBox)
                     }
                 }
             }

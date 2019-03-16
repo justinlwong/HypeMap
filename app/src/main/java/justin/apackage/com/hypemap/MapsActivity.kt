@@ -88,6 +88,7 @@ class MapsActivity :
                 viewModel.mMap.clear()
                 markers.clear()
                 infoMarkers.clear()
+
                 for (post in posts) {
                     val id = post.locationId
                     val name = post.locationName
