@@ -1,4 +1,4 @@
-package justin.apackage.com.hypemap
+package justin.apackage.com.hypemap.model
 
 import android.app.Application
 import android.arch.lifecycle.AndroidViewModel
@@ -7,10 +7,11 @@ import com.google.android.gms.maps.GoogleMap
 
 class HypeMapViewModel (application: Application) : AndroidViewModel(application) {
 
-    private val instaRepo: InstagramRepository = InstagramRepository(application)
+    private val instaRepo: HypeMapRepository =
+        HypeMapRepository(application)
     lateinit var mMap: GoogleMap
 
-    fun getPosts(): LiveData<List<Post>?> {
+    fun getPostLocations(): LiveData<List<PostLocation>?> {
         return instaRepo.getPosts()
     }
 
@@ -23,7 +24,7 @@ class HypeMapViewModel (application: Application) : AndroidViewModel(application
     }
 
     fun updateInstaData() {
-        instaRepo.updatePostsPeriodically()
+        instaRepo.updatePosts()
     }
 
     fun addUser(userName: String) {

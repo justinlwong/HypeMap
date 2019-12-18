@@ -1,4 +1,4 @@
-package justin.apackage.com.hypemap
+package justin.apackage.com.hypemap.ui
 
 import android.app.AlertDialog
 import android.arch.lifecycle.Observer
@@ -24,7 +24,15 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.maps.android.ui.IconGenerator
+import justin.apackage.com.hypemap.R
+import justin.apackage.com.hypemap.model.HypeMapViewModel
+import justin.apackage.com.hypemap.model.PostLocation
 
+/**
+ * The core activity which shows the map and instagram post data as clickable markers
+ *
+ * @author Justin Wong
+ */
 class MapsActivity :
         AppCompatActivity(),
         OnMapReadyCallback,
@@ -83,7 +91,7 @@ class MapsActivity :
 
         viewModel.updateInstaData()
 
-        viewModel.getPosts().observe(this, Observer { posts ->
+        viewModel.getPostLocations().observe(this, Observer { posts ->
             posts?.let{
                 viewModel.mMap.clear()
                 markers.clear()
@@ -107,18 +115,18 @@ class MapsActivity :
         })
     }
 
-    private fun addMarkerAtLocation(location: LatLng, locationName: String, postData: Post) {
+    private fun addMarkerAtLocation(location: LatLng, locationName: String, postLocationData: PostLocation) {
         val baseMarkerOptions = MarkerOptions().position(location)
         val pinMarkerOptions = baseMarkerOptions
-            .icon(BitmapDescriptorFactory.defaultMarker(postData.colour))
+            //.icon(BitmapDescriptorFactory.defaultMarker(postLocationData.colour))
 
         val mkr = viewModel.mMap.addMarker(pinMarkerOptions)
-        mkr.tag = postData
+        mkr.tag = postLocationData
         markers.add(mkr)
 
         val infoMkr = viewModel.mMap.addMarker(baseMarkerOptions.anchor(0.5f, 2.25f))
         infoMkr.setIcon(BitmapDescriptorFactory.fromBitmap(iconFactory.makeIcon(locationName)))
-        infoMkr.tag = postData
+        infoMkr.tag = postLocationData
         infoMkr.isVisible = false
         infoMarkers.add(infoMkr)
         updateInfoBasedOnZoom()
@@ -187,7 +195,6 @@ class MapsActivity :
             val lp = WindowManager.LayoutParams()
             lp.copyFrom(attributes)
             lp.gravity = Gravity.BOTTOM
-            //setDimAmount(0.0f)
             attributes = lp
         }
 
@@ -213,8 +220,8 @@ class MapsActivity :
 
                     override fun onFinish() {
                         marker.tag?.let { tag ->
-                            val post: Post = tag as Post
-                            post.run {
+                            val postLocation: PostLocation = tag as PostLocation
+                            postLocation.run {
                                 Log.d(TAG, "Finished animation, Post info: $caption, $userName")
                                 showPopup(postUrl, linkUrl, userName, caption)
                             }

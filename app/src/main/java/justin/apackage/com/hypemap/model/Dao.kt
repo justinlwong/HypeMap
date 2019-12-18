@@ -1,4 +1,4 @@
-package justin.apackage.com.hypemap
+package justin.apackage.com.hypemap.model
 
 import android.arch.lifecycle.LiveData
 import android.arch.persistence.room.Dao
@@ -10,16 +10,16 @@ import android.arch.persistence.room.Update
 @Dao
 interface PostDao {
     @Query("SELECT * from posts")
-    fun getPosts(): LiveData<List<Post>?>
+    fun getPosts(): LiveData<List<PostLocation>?>
 
     @Query("SELECT * from posts WHERE userName = :userName")
-    fun getUserPosts(userName: String): List<Post>
+    fun getUserPosts(userName: String): List<PostLocation>
 
     @Insert(onConflict = REPLACE)
-    fun insert(postData: Post)
+    fun insert(postLocationData: PostLocation)
 
     @Update
-    fun update(postData: Post)
+    fun update(postLocationData: PostLocation)
 
     @Query("DELETE from posts")
     fun deleteAll()
@@ -28,7 +28,7 @@ interface PostDao {
     fun delete(userName: String)
 
     @Query("SELECT * from posts WHERE id = :postId")
-    fun getPost(postId: String): List<Post>
+    fun getPost(postId: String): List<PostLocation>
 }
 
 @Dao

@@ -1,4 +1,4 @@
-package justin.apackage.com.hypemap
+package justin.apackage.com.hypemap.ui
 
 import android.content.Context
 import android.support.v4.content.res.ResourcesCompat
@@ -10,6 +10,9 @@ import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.TextView
 import com.squareup.picasso.Picasso
+import justin.apackage.com.hypemap.model.HypeMapViewModel
+import justin.apackage.com.hypemap.R
+import justin.apackage.com.hypemap.model.User
 
 class UsersListAdapter(private val context: Context,
                        private val mModel: HypeMapViewModel,
@@ -36,8 +39,8 @@ class UsersListAdapter(private val context: Context,
     override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
         val userView: View = convertView ?: inflater.inflate(R.layout.users_list_item, parent, false)
         val user = inputSource[position]
-        val nameTextView: TextView = userView.findViewById(R.id.user_name)
-        val profileImageView: ImageView = userView.findViewById(R.id.user_image)
+        val nameTextView: TextView = userView.findViewById(R.id.userName)
+        val profileImageView: ImageView = userView.findViewById(R.id.userImage)
 
         var name = user.userName
         if (name.length > 7) {
@@ -48,10 +51,12 @@ class UsersListAdapter(private val context: Context,
         Picasso.with(context).load(user.profilePicUrl).placeholder(R.mipmap.ic_launcher).into(profileImageView)
 
         if (user.visible) {
-            userView.setBackgroundColor(ResourcesCompat.getColor(context.resources, R.color.white, null))
+            userView.setBackgroundColor(ResourcesCompat.getColor(context.resources,
+                R.color.white, null))
             userView.alpha = 1f
         } else {
-            userView.setBackgroundColor(ResourcesCompat.getColor(context.resources, R.color.grey, null))
+            userView.setBackgroundColor(ResourcesCompat.getColor(context.resources,
+                R.color.grey, null))
             userView.alpha = 0.75f
         }
 
@@ -67,6 +72,4 @@ class UsersListAdapter(private val context: Context,
 
         return userView
     }
-
-
 }

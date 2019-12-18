@@ -1,11 +1,11 @@
-package justin.apackage.com.hypemap
+package justin.apackage.com.hypemap.model
 
 import android.app.Application
 import android.arch.persistence.room.Database
 import android.arch.persistence.room.Room
 import android.arch.persistence.room.RoomDatabase
 
-@Database(entities = [Post::class, User::class], version = 1)
+@Database(entities = [PostLocation::class, User::class], version = 1)
 abstract class HypeMapDatabase : RoomDatabase() {
     abstract fun postDao(): PostDao
     abstract fun userDao(): UserDao

@@ -1,11 +1,10 @@
-package justin.apackage.com.hypemap
+package justin.apackage.com.hypemap.ui
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
-import android.support.design.widget.FloatingActionButton
 import android.support.v4.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -13,11 +12,20 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.*
 import com.google.android.gms.maps.CameraUpdateFactory
+import justin.apackage.com.hypemap.model.HypeMapViewModel
+import justin.apackage.com.hypemap.R
+import justin.apackage.com.hypemap.model.User
+import kotlinx.android.synthetic.main.overlay_fragment.*
 
-
+/**
+ * An overlay fragment which shows list of users and controls on top of map
+ *
+ * @author Justin Wong
+ */
 class OverlayFragment : Fragment() {
 
     private lateinit var mModel: HypeMapViewModel
+    private lateinit var footerView: View
 
     companion object {
         private const val TAG = "OverlayFragment"
@@ -31,24 +39,17 @@ class OverlayFragment : Fragment() {
         } ?: throw Exception("Invalid Activity")
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.overlay_fragment, container, false)
+    override fun onCreateView(inflater: LayoutInflater,
+                              container: ViewGroup?,
+                              savedInstanceState: Bundle?): View? {
+        val newInflater = LayoutInflater.from(context)
+        footerView = newInflater.inflate(R.layout.list_footer, null, false)
+        return newInflater.inflate(R.layout.overlay_fragment, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val getUserEditText: EditText? = getView()?.findViewById(R.id.get_user_input)
-        val inflater = LayoutInflater.from(context)
-        val footerLayout = inflater.inflate(R.layout.list_footer, null, false)
-        val showRecentCheckBox: CheckBox? = footerLayout.findViewById(R.id.show_recent_button)
-        val localZoomButton: Button? = getView()?.findViewById(R.id.local_zoom_button)
-        val cityZoomButton: Button? = getView()?.findViewById(R.id.city_zoom_button)
-        val worldZoomButton: Button? = getView()?.findViewById(R.id.world_zoom_button)
-        val menuLaunchButton: FloatingActionButton? = getView()?.findViewById(R.id.menu_launch_button)
-        val usersListView: ListView? = getView()?.findViewById(R.id.users_list)
+        val showRecentCheckBox: CheckBox? = footerView.findViewById(R.id.showRecentCheckBox)
 
         showRecentCheckBox?.setOnCheckedChangeListener { buttonView, isChecked ->
             val dayInSeconds: Long = 60 * 60 * 24
@@ -74,18 +75,18 @@ class OverlayFragment : Fragment() {
             return@setOnEditorActionListener false
         }
 
-        usersListView?.addFooterView(showRecentCheckBox)
+        usersListView?.addFooterView(footerView)
 
         worldZoomButton?.setOnClickListener {
-            mModel.mMap.animateCamera(CameraUpdateFactory.zoomTo(1f))
+            zoomTo(1f)
         }
 
         cityZoomButton?.setOnClickListener {
-            mModel.mMap.animateCamera(CameraUpdateFactory.zoomTo(12f))
+            zoomTo(12f)
         }
 
         localZoomButton?.setOnClickListener {
-            mModel.mMap.animateCamera(CameraUpdateFactory.zoomTo(16f))
+            zoomTo(16f)
         }
 
         menuLaunchButton?.setOnClickListener {
@@ -123,16 +124,21 @@ class OverlayFragment : Fragment() {
                 val usersListAdapter = UsersListAdapter(
                     this.activity!!,
                     mModel,
-                    usersList)
+                    usersList
+                )
                 usersListView?.adapter = usersListAdapter
                 if (usersList.isEmpty()) {
-                    usersListView?.removeFooterView(showRecentCheckBox)
+                    usersListView?.removeFooterView(footerView)
                 } else {
                     if (usersListView?.footerViewsCount == 0) {
-                        usersListView.addFooterView(showRecentCheckBox)
+                        usersListView.addFooterView(footerView)
                     }
                 }
             }
         })
+    }
+
+    private fun zoomTo(zoomLevel: Float) {
+        mModel.mMap.animateCamera(CameraUpdateFactory.zoomTo(zoomLevel))
     }
 }
