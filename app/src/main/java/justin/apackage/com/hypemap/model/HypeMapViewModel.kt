@@ -1,8 +1,8 @@
 package justin.apackage.com.hypemap.model
 
 import android.app.Application
-import android.arch.lifecycle.AndroidViewModel
-import android.arch.lifecycle.LiveData
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
 import com.google.android.gms.maps.GoogleMap
 
 class HypeMapViewModel (application: Application) : AndroidViewModel(application) {

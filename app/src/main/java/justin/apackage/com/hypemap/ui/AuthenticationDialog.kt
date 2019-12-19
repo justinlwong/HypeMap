@@ -3,7 +3,6 @@ package justin.apackage.com.hypemap.ui
 import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.webkit.CookieManager
@@ -45,20 +44,14 @@ class AuthenticationDialog(context: Context,
         Log.d(TAG, "Requesting url: $requestUrl")
         webView.loadUrl(requestUrl)
         webView.webViewClient = object: WebViewClient() {
-            override fun shouldOverrideUrlLoading(view: WebView,
-                                                  url: String): Boolean {
-                if (url.startsWith(redirectUrl)) {
-                    dismiss()
-                    return true
-                }
-                return false
-            }
-
             override fun onPageFinished(view: WebView,
                                         url: String) {
                 super.onPageFinished(view, url)
                 val cookie = CookieManager.getInstance().getCookie(url)
-                listener.onCookieReceived(cookie)
+                if (url == redirectUrl) {
+                    listener.onCookieReceived(cookie ?: "")
+                    dismiss()
+                }
             }
         }
     }

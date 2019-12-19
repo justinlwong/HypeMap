@@ -2,20 +2,20 @@ package justin.apackage.com.hypemap.model
 
 import android.annotation.SuppressLint
 import android.app.Application
-import android.arch.lifecycle.LiveData
 import android.content.Context
 import android.util.Log
+import androidx.lifecycle.LiveData
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import io.reactivex.Maybe
 import io.reactivex.Observable
-import io.reactivex.Observable.fromIterable
 import io.reactivex.Scheduler
+import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
 import justin.apackage.com.hypemap.HypeMapConstants
-import justin.apackage.com.hypemap.HypeMapConstants.Companion.INSTAGRAM_COOKIE_KEY
 import justin.apackage.com.hypemap.HypeMapConstants.Companion.HYPEMAP_SHARED_PREF
+import justin.apackage.com.hypemap.HypeMapConstants.Companion.INSTAGRAM_COOKIE_KEY
 import justin.apackage.com.hypemap.network.InstagramService
 import okhttp3.ResponseBody
 import retrofit2.Response
@@ -39,7 +39,7 @@ class HypeMapRepository(private val application: Application) {
     private val ioScheduler: Scheduler = Schedulers.io()
 
     companion object {
-        private const val TAG = "InstagramRepository"
+        private const val TAG = "HypeMapRepository"
     }
 
     fun getPosts(): LiveData<List<PostLocation>?> {
@@ -56,9 +56,29 @@ class HypeMapRepository(private val application: Application) {
     }
 
     fun updatePosts() {
-        Observable.defer{ Observable.just(userDao.getCurrentUsers())}
+        ioScheduler.scheduleDirect {
+            fetchPosts(userDao.getCurrentUsers())
+                .observeOn(Schedulers.computation())
+                .subscribe()
+        }
+    }
+
+    fun addUser(userName: String) {
+        ioScheduler.scheduleDirect {
+            fetchUser(userName)
+            .flatMapObservable { response ->
+                fetchPosts(listOf(userDao.getUser(userName)))
+            }
+            .subscribeOn(ioScheduler)
+            .observeOn(Schedulers.computation())
+            .subscribe()
+        }
+    }
+
+    private fun fetchPosts(users: List<User>): Observable<Pair<RawPost, Response<ResponseBody>>> {
+        return Observable.defer{ Observable.just(users)}
             .flatMapIterable { usersList -> usersList }
-            .flatMap { instagramService.getUserPage(getCookie(INSTAGRAM_COOKIE_KEY), it.userName)}
+            .flatMapSingle { instagramService.getUserPage(getCookie(INSTAGRAM_COOKIE_KEY), it.userName)}
             .flatMapMaybe { response ->
                 val userWrapper: UserWrapper? = getUserWrapper(response.body()?.string())
                 userWrapper?.let {
@@ -68,23 +88,26 @@ class HypeMapRepository(private val application: Application) {
             .flatMapIterable { posts -> posts }
             .flatMap(
                 { post ->
-                    instagramService.getCoordinates(getCookie(INSTAGRAM_COOKIE_KEY), post.locationId)},
+                    instagramService.getCoordinates(getCookie(INSTAGRAM_COOKIE_KEY), post.locationId).toObservable()},
                 { post: RawPost, response: Response<ResponseBody> -> Pair(post, response)})
+            .onErrorResumeNext(Observable.empty())
+            .doOnNext { result ->
+                insertPost(result.first, result.second.body()?.string())
+            }
             .subscribeOn(ioScheduler)
-            .observeOn(Schedulers.computation())
-            .subscribe(
-                { result -> insertPost(result.first, result.second.body()?.string())},
-                { error -> Log.d(TAG, "location search error: $error")}
-            )
     }
 
-    private fun getCurrentUsersMap(): MutableMap<String, User> {
-        val users = userDao.getCurrentUsers()
-        val map: MutableMap<String, User> = mutableMapOf()
-        for (user in users) {
-            map[user.userName] = user
-        }
-        return map
+    private fun fetchUser(userName: String): Single<Response<ResponseBody>> {
+        return instagramService.getUserPage(getCookie(INSTAGRAM_COOKIE_KEY), userName)
+            .doOnSuccess { response ->
+                val wrapper = getUserWrapper(response.body()?.string())
+                wrapper?.let {
+                    userDao.insert(it.user)
+                }
+            }
+            .doOnError { error ->
+                Log.d(TAG, "addUser error: $error") }
+            .subscribeOn(ioScheduler)
     }
 
     private fun getUserWrapper(response: String?): UserWrapper? {
@@ -100,21 +123,6 @@ class HypeMapRepository(private val application: Application) {
         Parser.getLocation(post, response)?.let { postLocation ->
             postDao.insert(postLocation)
         }
-    }
-
-    fun addUser(userName: String) {
-        instagramService.getUserPage(getCookie(INSTAGRAM_COOKIE_KEY), userName)
-            .subscribeOn(ioScheduler)
-            .observeOn(Schedulers.computation())
-            .subscribe(
-                { response ->
-                    val wrapper = getUserWrapper(response.body()?.string())
-                    wrapper?.let {
-                        userDao.insert(it.user)}
-                },
-                { error ->
-                    Log.d(TAG, "addUser error: $error")
-                })
     }
 
     fun removeUser(userName: String) {
