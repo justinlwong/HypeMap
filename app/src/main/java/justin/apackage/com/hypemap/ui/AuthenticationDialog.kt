@@ -3,6 +3,7 @@ package justin.apackage.com.hypemap.ui
 import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.webkit.CookieManager
@@ -47,8 +48,14 @@ class AuthenticationDialog(context: Context,
             override fun onPageFinished(view: WebView,
                                         url: String) {
                 super.onPageFinished(view, url)
-                val cookie = CookieManager.getInstance().getCookie(url)
-                if (url == redirectUrl) {
+                if (url.contains("access_token=")) {
+                    val uri = Uri.parse(url)
+                    val accessToken = uri.encodedFragment
+                    accessToken?.let {
+                        listener.onTokenReceived(it.substring(it.lastIndexOf("=") + 1))
+                    }
+                } else if (url == redirectUrl) {
+                    val cookie = CookieManager.getInstance().getCookie(url)
                     listener.onCookieReceived(cookie ?: "")
                     dismiss()
                 }
