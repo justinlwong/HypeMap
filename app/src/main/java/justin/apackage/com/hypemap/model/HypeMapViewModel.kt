@@ -12,6 +12,10 @@ class HypeMapViewModel (application: Application) : AndroidViewModel(application
     lateinit var mMap: GoogleMap
 
     fun getPostLocations(): LiveData<List<PostLocation>?> {
+        val posts: List<PostLocation>? = instaRepo.getPosts().value
+        if (posts == null || posts.isEmpty()) {
+            instaRepo.updatePosts()
+        }
         return instaRepo.getPosts()
     }
 
@@ -23,10 +27,6 @@ class HypeMapViewModel (application: Application) : AndroidViewModel(application
         instaRepo.filterMarkersByTime(timeThreshold)
     }
 
-    fun updateInstaData() {
-        instaRepo.updatePosts()
-    }
-
     fun addUser(userName: String) {
         instaRepo.addUser(userName)
     }
@@ -35,12 +35,7 @@ class HypeMapViewModel (application: Application) : AndroidViewModel(application
         return instaRepo.getUsers()
     }
 
-    fun removeAll() {
-        instaRepo.removeAll()
-    }
-
     fun removeUser(userName: String) {
         instaRepo.removeUser(userName)
     }
-
 }

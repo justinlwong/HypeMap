@@ -119,6 +119,10 @@ class OverlayFragment : Fragment() {
             }
         }
 
+        startObservers()
+    }
+
+    private fun startObservers() {
         mModel.getUsers().observe(this, Observer<List<User>> { usersList ->
             if (usersList != null) {
                 val usersListAdapter = UsersListAdapter(

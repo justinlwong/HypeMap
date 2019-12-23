@@ -63,6 +63,10 @@ class HypeMapRepository(private val application: Application) {
         }
     }
 
+    fun updatePost(post: PostLocation) {
+        postDao.update(post)
+    }
+
     fun addUser(userName: String) {
         ioScheduler.scheduleDirect {
             fetchUser(userName)
@@ -121,6 +125,7 @@ class HypeMapRepository(private val application: Application) {
     @Synchronized
     private fun insertPost(post: RawPost, response: String?) {
         Parser.getLocation(post, response)?.let { postLocation ->
+            postLocation.visible = userDao.getUser(postLocation.userName).visible
             postDao.insert(postLocation)
         }
     }
@@ -135,6 +140,14 @@ class HypeMapRepository(private val application: Application) {
 
     fun getUsers() : LiveData<List<User>> {
         return userDao.getUsers()
+    }
+
+    fun getUser(userName: String) : User {
+        return userDao.getUser(userName)
+    }
+
+    fun updateUser(user: User) {
+        userDao.update(user)
     }
 
     fun removeAll() {

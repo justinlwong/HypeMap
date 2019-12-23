@@ -96,7 +96,7 @@ object Parser {
                 post.linkUrl,
                 post.caption,
                 post.timestamp,
-                true)
+                false)
         } else {
             Log.d(TAG, "Bad location response")
         }

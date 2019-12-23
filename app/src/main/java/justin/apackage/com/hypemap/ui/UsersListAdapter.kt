@@ -15,7 +15,7 @@ import justin.apackage.com.hypemap.R
 import justin.apackage.com.hypemap.model.User
 
 class UsersListAdapter(private val context: Context,
-                       private val mModel: HypeMapViewModel,
+                       private val viewModel: HypeMapViewModel,
                        private val inputSource: List<User>) : BaseAdapter() {
     private val inflater: LayoutInflater =
         context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -62,11 +62,11 @@ class UsersListAdapter(private val context: Context,
 
         userView.setOnClickListener {
             Log.d(TAG, "${user.userName} clicked at visibility: ${user.visible}")
-            mModel.showUserMarkers(user.userName, !user.visible)
+            viewModel.showUserMarkers(user.userName, !user.visible)
         }
 
         userView.setOnLongClickListener {
-            mModel.removeUser(user.userName)
+            viewModel.removeUser(user.userName)
             return@setOnLongClickListener true
         }
 

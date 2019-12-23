@@ -74,12 +74,6 @@ class MapsActivity :
         iconFactory.setTextAppearance(R.style.TextInfoWindow)
     }
 
-    private fun addListeners() {
-        viewModel.mMap.setOnMarkerClickListener(this)
-        viewModel.mMap.setOnCameraMoveListener(this)
-        viewModel.mMap.setOnMapClickListener(this)
-    }
-
     override fun onMapReady(googleMap: GoogleMap) {
         viewModel.mMap = googleMap
         viewModel.mMap.uiSettings.isZoomControlsEnabled = true
@@ -89,8 +83,10 @@ class MapsActivity :
         // Set to Toronto
         viewModel.mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(43.6712698,-79.3819235), 1f))
 
-        viewModel.updateInstaData()
+        startObservers()
+    }
 
+    private fun startObservers() {
         viewModel.getPostLocations().observe(this, Observer { posts ->
             posts?.let{
                 viewModel.mMap.clear()
@@ -113,6 +109,45 @@ class MapsActivity :
                 }
             }
         })
+    }
+
+    override fun onMarkerClick(p0: Marker?) : Boolean {
+        p0?.let { marker ->
+            viewModel.mMap.setPadding(0, 0, 0, 1300)
+            val zoom = viewModel.mMap.cameraPosition.zoom
+            var duration = 100f
+            if (zoom != 0f) {
+                duration = 300f * (12f / viewModel.mMap.cameraPosition.zoom)
+            }
+
+            viewModel.mMap.animateCamera(
+                CameraUpdateFactory.newLatLngZoom(marker.position, 16f),
+                duration.toInt(),
+                object : GoogleMap.CancelableCallback {
+                    override fun onCancel() {
+                    }
+
+                    override fun onFinish() {
+                        marker.tag?.let { tag ->
+                            val postLocation: PostLocation = tag as PostLocation
+                            postLocation.run {
+                                Log.d(TAG, "Finished animation, Post info: $caption, $userName")
+                                showPopup(postUrl, linkUrl, userName, caption)
+                            }
+                        }
+
+                    }
+                })
+        }
+        return true
+    }
+
+    override fun onCameraMove() {
+        updateInfoBasedOnZoom()
+    }
+
+    override fun onMapClick(p0: LatLng?) {
+        showInfoMarkers(!isShowingInfo)
     }
 
     private fun addMarkerAtLocation(location: LatLng, locationName: String, postLocationData: PostLocation) {
@@ -202,37 +237,6 @@ class MapsActivity :
         Log.d(TAG, "Showing popup")
     }
 
-    override fun onMarkerClick(p0: Marker?) : Boolean {
-        p0?.let { marker ->
-            viewModel.mMap.setPadding(0, 0, 0, 1300)
-            val zoom = viewModel.mMap.cameraPosition.zoom
-            var duration = 100f
-            if (zoom != 0f) {
-                duration = 300f * (12f / viewModel.mMap.cameraPosition.zoom)
-            }
-
-            viewModel.mMap.animateCamera(
-                CameraUpdateFactory.newLatLngZoom(marker.position, 16f),
-                duration.toInt(),
-                object : GoogleMap.CancelableCallback {
-                    override fun onCancel() {
-                    }
-
-                    override fun onFinish() {
-                        marker.tag?.let { tag ->
-                            val postLocation: PostLocation = tag as PostLocation
-                            postLocation.run {
-                                Log.d(TAG, "Finished animation, Post info: $caption, $userName")
-                                showPopup(postUrl, linkUrl, userName, caption)
-                            }
-                        }
-
-                    }
-                })
-        }
-        return true
-    }
-
     private fun showInfoMarkers(show: Boolean) {
         isShowingInfo = show
         for (infoMarker in infoMarkers) {
@@ -251,11 +255,9 @@ class MapsActivity :
         }
     }
 
-    override fun onCameraMove() {
-        updateInfoBasedOnZoom()
-    }
-
-    override fun onMapClick(p0: LatLng?) {
-        showInfoMarkers(!isShowingInfo)
+    private fun addListeners() {
+        viewModel.mMap.setOnMarkerClickListener(this)
+        viewModel.mMap.setOnCameraMoveListener(this)
+        viewModel.mMap.setOnMapClickListener(this)
     }
 }
