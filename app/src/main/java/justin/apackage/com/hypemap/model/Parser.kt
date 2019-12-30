@@ -32,7 +32,7 @@ object Parser {
         val posts: JSONArray = userJson.getJSONObject("edge_owner_to_timeline_media")
             .getJSONArray("edges")
 
-        for (i in 0..(posts.length() - 1)) {
+        for (i in 0 until posts.length()) {
             val node = posts.getJSONObject(i)
                 .getJSONObject("node")
 
@@ -48,10 +48,13 @@ object Parser {
                     .getJSONObject("edge_media_to_caption")
 
                 if (!captionEdge.isNull("edges")) {
-                    captionText = captionEdge.getJSONArray("edges")
-                        .getJSONObject(0)
-                        .getJSONObject("node")
-                        .getString("text")
+                    val edges = captionEdge.getJSONArray("edges")
+                    if (edges.length() > 0) {
+                        captionText = captionEdge.getJSONArray("edges")
+                            .getJSONObject(0)
+                            .getJSONObject("node")
+                            .getString("text")
+                    }
                 }
 
                 val postId = node.getString("id")
@@ -81,22 +84,27 @@ object Parser {
             val locationData = jsonObj.getJSONObject("graphql")
                 .getJSONObject("location")
 
-            val latitude = locationData.getDouble("lat")
-            val longitude = locationData.getDouble("lng")
-            val id: String = locationData.getString("id")
+            val latitude = locationData.optDouble("lat")
+            val longitude = locationData.optDouble("lng")
+            val id: String = locationData.optString("id")
 
-            Log.d(TAG, "location $id mapped to $latitude, $longitude")
-            return PostLocation(id,
-                post.userName,
-                post.locationName,
-                post.locationId,
-                latitude,
-                longitude,
-                post.postUrl,
-                post.linkUrl,
-                post.caption,
-                post.timestamp,
-                false)
+            if (!latitude.isNaN() && !longitude.isNaN()) {
+
+                Log.d(TAG, "location $id mapped to $latitude, $longitude")
+                return PostLocation(
+                    id,
+                    post.userName,
+                    post.locationName,
+                    post.locationId,
+                    latitude,
+                    longitude,
+                    post.postUrl,
+                    post.linkUrl,
+                    post.caption,
+                    post.timestamp,
+                    false
+                )
+            }
         } else {
             Log.d(TAG, "Bad location response")
         }

@@ -1,19 +1,19 @@
 package justin.apackage.com.hypemap.ui
 
-import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
-import android.widget.*
+import android.widget.LinearLayout
+import android.widget.Toast
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProviders
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.maps.CameraUpdateFactory
-import justin.apackage.com.hypemap.model.HypeMapViewModel
 import justin.apackage.com.hypemap.R
+import justin.apackage.com.hypemap.model.HypeMapViewModel
 import justin.apackage.com.hypemap.model.User
 import kotlinx.android.synthetic.main.overlay_fragment.*
 
@@ -25,7 +25,7 @@ import kotlinx.android.synthetic.main.overlay_fragment.*
 class OverlayFragment : Fragment() {
 
     private lateinit var mModel: HypeMapViewModel
-    private lateinit var footerView: View
+    private lateinit var usersListAdapter: UsersListAdapter
 
     companion object {
         private const val TAG = "OverlayFragment"
@@ -43,24 +43,22 @@ class OverlayFragment : Fragment() {
                               container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
         val newInflater = LayoutInflater.from(context)
-        footerView = newInflater.inflate(R.layout.list_footer, null, false)
         return newInflater.inflate(R.layout.overlay_fragment, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val showRecentCheckBox: CheckBox? = footerView.findViewById(R.id.showRecentCheckBox)
 
-        showRecentCheckBox?.setOnCheckedChangeListener { buttonView, isChecked ->
-            val dayInSeconds: Long = 60 * 60 * 24
-            if (isChecked) {
-                val threeDaysAgoTime = System.currentTimeMillis()/1000 - 3*dayInSeconds
-                mModel.filterMarkersByTime(threeDaysAgoTime)
-            } else {
-                val thirtyDaysAgoTime = System.currentTimeMillis()/1000 - 30*dayInSeconds
-                mModel.filterMarkersByTime(thirtyDaysAgoTime)
-            }
-        }
+        val layoutManager = LinearLayoutManager(context,
+            LinearLayoutManager.HORIZONTAL, false)
+        usersRecyclerView.layoutManager = layoutManager
+
+        usersListAdapter = UsersListAdapter(
+            this.activity!!,
+            mModel,
+            listOf())
+
+        usersRecyclerView.adapter = usersListAdapter
 
         getUserEditText?.setOnEditorActionListener { v, actionId, event ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
@@ -75,8 +73,6 @@ class OverlayFragment : Fragment() {
             return@setOnEditorActionListener false
         }
 
-        usersListView?.addFooterView(footerView)
-
         worldZoomButton?.setOnClickListener {
             zoomTo(1f)
         }
@@ -89,55 +85,13 @@ class OverlayFragment : Fragment() {
             zoomTo(16f)
         }
 
-        menuLaunchButton?.setOnClickListener {
-            usersListView?.run {
-                when (visibility) {
-                    View.VISIBLE -> {
-                        animate()
-                            .alpha(0f)
-                            .setDuration(500)
-                            .setListener(object : AnimatorListenerAdapter() {
-                                override fun onAnimationEnd(animation: Animator) {
-                                    visibility = View.GONE
-                                }
-                            }).start()
-                    }
-
-                    View.GONE -> {
-                        visibility = View.VISIBLE
-                        alpha = 0f
-                        animate()
-                            .alpha(1f)
-                            .setDuration(500)
-                            .setListener(object : AnimatorListenerAdapter() {
-                                override fun onAnimationEnd(animation: Animator) {
-                                    visibility = View.VISIBLE
-                                }
-                            }).start()
-                    }
-                }
-            }
-        }
-
         startObservers()
     }
 
     private fun startObservers() {
         mModel.getUsers().observe(this, Observer<List<User>> { usersList ->
             if (usersList != null) {
-                val usersListAdapter = UsersListAdapter(
-                    this.activity!!,
-                    mModel,
-                    usersList
-                )
-                usersListView?.adapter = usersListAdapter
-                if (usersList.isEmpty()) {
-                    usersListView?.removeFooterView(footerView)
-                } else {
-                    if (usersListView?.footerViewsCount == 0) {
-                        usersListView.addFooterView(footerView)
-                    }
-                }
+                usersListAdapter.setItems(usersList)
             }
         })
     }

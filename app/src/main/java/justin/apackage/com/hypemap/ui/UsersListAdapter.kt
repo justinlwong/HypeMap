@@ -1,75 +1,57 @@
 package justin.apackage.com.hypemap.ui
 
 import android.content.Context
-import androidx.core.content.res.ResourcesCompat
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
 import com.squareup.picasso.Picasso
-import justin.apackage.com.hypemap.model.HypeMapViewModel
 import justin.apackage.com.hypemap.R
+import justin.apackage.com.hypemap.model.HypeMapViewModel
 import justin.apackage.com.hypemap.model.User
+import kotlinx.android.synthetic.main.users_list_item.view.*
 
 class UsersListAdapter(private val context: Context,
                        private val viewModel: HypeMapViewModel,
-                       private val inputSource: List<User>) : BaseAdapter() {
-    private val inflater: LayoutInflater =
-        context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+                       private var users: List<User>) : RecyclerView.Adapter<UsersListAdapter.ViewHolder>() {
 
-    companion object {
-        private const val TAG = "UsersListAdapter"
+    class ViewHolder (view: View) : RecyclerView.ViewHolder(view) {
+        val userName: TextView = view.userName
+        val userImage: ImageView = view.userImage
     }
 
-    override fun getItem(position: Int): Any {
-        return inputSource[position]
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        return ViewHolder(
+            LayoutInflater.from(context).inflate(
+                R.layout.users_list_item,
+                parent,
+                false
+            )
+        )
     }
 
-    override fun getItemId(position: Int): Long {
-        return position.toLong()
+    override fun getItemCount(): Int {
+        return users.size
     }
 
-    override fun getCount(): Int {
-        return inputSource.size
-    }
-
-    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
-        val userView: View = convertView ?: inflater.inflate(R.layout.users_list_item, parent, false)
-        val user = inputSource[position]
-        val nameTextView: TextView = userView.findViewById(R.id.userName)
-        val profileImageView: ImageView = userView.findViewById(R.id.userImage)
-
-        var name = user.userName
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        var name = users[position].userName
+        val picUrl = users[position].profilePicUrl
         if (name.length > 7) {
             name = "${name.substring(0, 7)}.."
         }
-        nameTextView.text = name
+        holder.userName.text = name
+        Picasso.with(context).load(picUrl).placeholder(R.mipmap.ic_launcher).into(holder.userImage)
+    }
 
-        Picasso.with(context).load(user.profilePicUrl).placeholder(R.mipmap.ic_launcher).into(profileImageView)
+    fun setItems(users: List<User>) {
+        this.users = users
+        notifyDataSetChanged()
+    }
 
-        if (user.visible) {
-            userView.setBackgroundColor(ResourcesCompat.getColor(context.resources,
-                R.color.white, null))
-            userView.alpha = 1f
-        } else {
-            userView.setBackgroundColor(ResourcesCompat.getColor(context.resources,
-                R.color.grey, null))
-            userView.alpha = 0.75f
-        }
-
-        userView.setOnClickListener {
-            Log.d(TAG, "${user.userName} clicked at visibility: ${user.visible}")
-            viewModel.showUserMarkers(user.userName, !user.visible)
-        }
-
-        userView.setOnLongClickListener {
-            viewModel.removeUser(user.userName)
-            return@setOnLongClickListener true
-        }
-
-        return userView
+    companion object {
+        private const val TAG = "UsersListAdapter"
     }
 }

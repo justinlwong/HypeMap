@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    tools:context=".ui.OverlayFragment">
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".ui.OverlayFragment">
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -26,6 +24,7 @@
             android:hint="@string/follow_hint"/>
 
         <LinearLayout
+            android:id="@+id/zoomList"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="50dp"
@@ -58,33 +57,20 @@
 
         </LinearLayout>
 
-        <RelativeLayout
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingStart="5dp"
-            android:paddingBottom="100dp">
+            android:layout_above="@id/zoomList"
+            android:paddingStart="5dp">
 
-            <ListView
-                android:layout_width="120dp"
+            <androidx.recyclerview.widget.RecyclerView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="5dp"
                 android:background="@color/white"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
-                android:id="@+id/usersListView"/>
+                android:id="@+id/usersRecyclerView"/>
 
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentBottom="true"
-                android:backgroundTint="@color/white"
-                app:borderWidth="0dp"
-                android:tint="@color/grey"
-                android:src="@android:drawable/ic_input_add"
-                android:id="@+id/menuLaunchButton" />
-
-        </RelativeLayout>
+        </LinearLayout>
 
     </RelativeLayout>
 
