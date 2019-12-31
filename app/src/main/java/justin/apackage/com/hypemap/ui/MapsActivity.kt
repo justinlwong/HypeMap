@@ -83,7 +83,7 @@ class MapsActivity :
         // Set to Toronto
         viewModel.mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(43.6712698,-79.3819235), 1f))
 
-        startObservers()
+        //startObservers()
     }
 
     private fun startObservers() {

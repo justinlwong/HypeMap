@@ -5,7 +5,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.squareup.picasso.Picasso
 import justin.apackage.com.hypemap.R
@@ -17,8 +16,9 @@ class UsersListAdapter(private val context: Context,
                        private val viewModel: HypeMapViewModel,
                        private var users: List<User>) : RecyclerView.Adapter<UsersListAdapter.ViewHolder>() {
 
+    var activePosition: Int = 0
+
     class ViewHolder (view: View) : RecyclerView.ViewHolder(view) {
-        val userName: TextView = view.userName
         val userImage: ImageView = view.userImage
     }
 
@@ -37,13 +37,17 @@ class UsersListAdapter(private val context: Context,
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        var name = users[position].userName
         val picUrl = users[position].profilePicUrl
-        if (name.length > 7) {
-            name = "${name.substring(0, 7)}.."
-        }
-        holder.userName.text = name
         Picasso.with(context).load(picUrl).placeholder(R.mipmap.ic_launcher).into(holder.userImage)
+        if (activePosition != position) {
+            holder.userImage.background = null
+        } else {
+            holder.userImage.background = context.getDrawable(R.drawable.user_back)
+        }
+        holder.userImage.setOnClickListener { view ->
+            activePosition = position
+            notifyDataSetChanged()
+        }
     }
 
     fun setItems(users: List<User>) {
