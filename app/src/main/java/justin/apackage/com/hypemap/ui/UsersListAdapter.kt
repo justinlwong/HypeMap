@@ -8,15 +8,18 @@ import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.squareup.picasso.Picasso
 import justin.apackage.com.hypemap.R
-import justin.apackage.com.hypemap.model.HypeMapViewModel
 import justin.apackage.com.hypemap.model.User
 import kotlinx.android.synthetic.main.users_list_item.view.*
 
 class UsersListAdapter(private val context: Context,
-                       private val viewModel: HypeMapViewModel,
-                       private var users: List<User>) : RecyclerView.Adapter<UsersListAdapter.ViewHolder>() {
+                       private var users: List<User>,
+                       private val listener: Listener) : RecyclerView.Adapter<UsersListAdapter.ViewHolder>() {
 
-    var activePosition: Int = 0
+    interface Listener {
+        fun onActiveUserUpdate(userName: String)
+    }
+
+    private var activePosition: Int = 0
 
     class ViewHolder (view: View) : RecyclerView.ViewHolder(view) {
         val userImage: ImageView = view.userImage
@@ -44,14 +47,18 @@ class UsersListAdapter(private val context: Context,
         } else {
             holder.userImage.background = context.getDrawable(R.drawable.user_back)
         }
-        holder.userImage.setOnClickListener { view ->
+        holder.userImage.setOnClickListener {
             activePosition = position
+            listener.onActiveUserUpdate(users[position].userName)
             notifyDataSetChanged()
         }
     }
 
     fun setItems(users: List<User>) {
         this.users = users
+        if (users.isNotEmpty()) {
+            listener.onActiveUserUpdate(users[activePosition].userName)
+        }
         notifyDataSetChanged()
     }
 

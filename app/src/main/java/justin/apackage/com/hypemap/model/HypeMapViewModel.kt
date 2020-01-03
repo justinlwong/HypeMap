@@ -4,12 +4,14 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.model.Marker
 
 class HypeMapViewModel (application: Application) : AndroidViewModel(application) {
 
     private val instaRepo: HypeMapRepository =
         HypeMapRepository(application)
     lateinit var mMap: GoogleMap
+    private var userMarkers: Map<String, MutableList<Marker>?> = mutableMapOf()
 
     fun getPostLocations(): LiveData<List<PostLocation>?> {
         val posts: List<PostLocation>? = instaRepo.getPosts().value
@@ -17,14 +19,6 @@ class HypeMapViewModel (application: Application) : AndroidViewModel(application
             instaRepo.updatePosts()
         }
         return instaRepo.getPosts()
-    }
-
-    fun showUserMarkers(userName: String, visible: Boolean) {
-        instaRepo.showUserMarkers(userName, visible)
-    }
-
-    fun filterMarkersByTime(timeThreshold: Long) {
-        instaRepo.filterMarkersByTime(timeThreshold)
     }
 
     fun addUser(userName: String) {
@@ -35,7 +29,7 @@ class HypeMapViewModel (application: Application) : AndroidViewModel(application
         return instaRepo.getUsers()
     }
 
-    fun removeUser(userName: String) {
-        instaRepo.removeUser(userName)
+    fun getUserMarkers(): Map<String, MutableList<Marker>?> {
+        return userMarkers
     }
 }

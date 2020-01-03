@@ -5,15 +5,20 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
-import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
+import com.google.android.gms.maps.model.MarkerOptions
+import com.google.maps.android.ui.IconGenerator
 import justin.apackage.com.hypemap.R
 import justin.apackage.com.hypemap.model.HypeMapViewModel
+import justin.apackage.com.hypemap.model.PostLocation
 import justin.apackage.com.hypemap.model.User
 import kotlinx.android.synthetic.main.overlay_fragment.*
 
@@ -22,10 +27,12 @@ import kotlinx.android.synthetic.main.overlay_fragment.*
  *
  * @author Justin Wong
  */
-class OverlayFragment : Fragment() {
+class OverlayFragment : Fragment(), UsersListAdapter.Listener {
 
-    private lateinit var mModel: HypeMapViewModel
+    private lateinit var viewModel: HypeMapViewModel
     private lateinit var usersListAdapter: UsersListAdapter
+    private val iconFactory by lazy{ IconGenerator(activity!!.applicationContext) }
+    private var activeUser: String? = null
 
     companion object {
         private const val TAG = "OverlayFragment"
@@ -34,7 +41,8 @@ class OverlayFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        mModel = activity?.run {
+        iconFactory.setTextAppearance(R.style.TextInfoWindow)
+        viewModel = activity?.run {
             ViewModelProviders.of(this).get(HypeMapViewModel::class.java)
         } ?: throw Exception("Invalid Activity")
     }
@@ -55,8 +63,8 @@ class OverlayFragment : Fragment() {
 
         usersListAdapter = UsersListAdapter(
             this.activity!!,
-            mModel,
-            listOf())
+            listOf(),
+            this)
 
         usersRecyclerView.adapter = usersListAdapter
 
@@ -64,7 +72,7 @@ class OverlayFragment : Fragment() {
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 val name: String = getUserEditText.text.toString().trim()
                 if (name != "") {
-                    mModel.addUser(name)
+                    viewModel.addUser(name)
                     Toast.makeText(context, "Fetching user posts...", Toast.LENGTH_LONG).show()
                 } else {
                     Toast.makeText(context, "Please continue typing", Toast.LENGTH_SHORT).show()
@@ -88,15 +96,60 @@ class OverlayFragment : Fragment() {
         startObservers()
     }
 
+    override fun onActiveUserUpdate(userName: String) {
+        activeUser = userName
+        viewModel.getUserMarkers().entries.forEach { entry ->
+            val name = entry.key
+            val markers = entry.value
+            markers?.forEach {
+                it.isVisible = activeUser == name
+            }
+        }
+    }
+
     private fun startObservers() {
-        mModel.getUsers().observe(this, Observer<List<User>> { usersList ->
+        viewModel.getUsers().observe(this, Observer<List<User>> { usersList ->
             if (usersList != null) {
                 usersListAdapter.setItems(usersList)
             }
         })
+
+        viewModel.getPostLocations().observe(this, Observer { posts ->
+            viewModel.mMap.clear()
+            if (activeUser != null) {
+                posts?.let {
+                    it.filter { post -> post.userName == activeUser }.forEach { post ->
+                        addMarkerAtLocation(
+                            LatLng(post.latitude, post.longitude),
+                            post.locationName,
+                            post
+                        )
+                    }
+                }
+            }
+        })
+    }
+
+    private fun addMarkerAtLocation(location: LatLng, locationName: String, postLocationData: PostLocation) {
+        val baseMarkerOptions = MarkerOptions().position(location)
+
+        val mkr = viewModel.mMap.addMarker(baseMarkerOptions)
+        mkr.tag = postLocationData
+
+
+        val infoMkr = viewModel.mMap.addMarker(baseMarkerOptions.anchor(0.5f, 2.25f))
+        infoMkr.setIcon(BitmapDescriptorFactory.fromBitmap(iconFactory.makeIcon(locationName)))
+        infoMkr.tag = postLocationData
+
+        var userMarkers: MutableList<Marker>? = viewModel.getUserMarkers()[postLocationData.userName]
+        if (userMarkers == null) {
+            userMarkers = mutableListOf()
+        }
+        userMarkers.add(mkr)
+        userMarkers.add(infoMkr)
     }
 
     private fun zoomTo(zoomLevel: Float) {
-        mModel.mMap.animateCamera(CameraUpdateFactory.zoomTo(zoomLevel))
+        viewModel.mMap.animateCamera(CameraUpdateFactory.zoomTo(zoomLevel))
     }
 }

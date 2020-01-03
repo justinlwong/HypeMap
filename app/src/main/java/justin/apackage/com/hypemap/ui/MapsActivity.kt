@@ -1,29 +1,25 @@
 package justin.apackage.com.hypemap.ui
 
 import android.app.AlertDialog
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
 import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import androidx.fragment.app.FragmentTransaction
-import androidx.appcompat.app.AppCompatActivity
 import android.util.Log
 import android.view.Gravity
 import android.view.WindowManager
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.FragmentTransaction
+import androidx.lifecycle.ViewModelProviders
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
-import com.google.android.gms.maps.model.MarkerOptions
-import com.google.maps.android.ui.IconGenerator
 import justin.apackage.com.hypemap.R
 import justin.apackage.com.hypemap.model.HypeMapViewModel
 import justin.apackage.com.hypemap.model.PostLocation
@@ -44,7 +40,6 @@ class MapsActivity :
     private val viewModel by lazy {ViewModelProviders.of(this).get(HypeMapViewModel::class.java)}
     private lateinit var webView: WebView
     private lateinit var popUp: AlertDialog
-    private val iconFactory by lazy{IconGenerator(this)}
     private val markers: MutableList<Marker> = mutableListOf()
     private val infoMarkers: MutableList<Marker> = mutableListOf()
     private var isShowingInfo = false
@@ -71,7 +66,6 @@ class MapsActivity :
 
         webView = createWebView()
         popUp = createPopUp()
-        iconFactory.setTextAppearance(R.style.TextInfoWindow)
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -84,31 +78,6 @@ class MapsActivity :
         viewModel.mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(43.6712698,-79.3819235), 1f))
 
         //startObservers()
-    }
-
-    private fun startObservers() {
-        viewModel.getPostLocations().observe(this, Observer { posts ->
-            posts?.let{
-                viewModel.mMap.clear()
-                markers.clear()
-                infoMarkers.clear()
-
-                for (post in posts) {
-                    val id = post.locationId
-                    val name = post.locationName
-                    Log.d(
-                        TAG,
-                        "observing location id: $id and name: $name with coords: ${post.latitude}, ${post.longitude}")
-                    if (post.visible) {
-                        addMarkerAtLocation(
-                            LatLng(post.latitude, post.longitude),
-                            name,
-                            post
-                        )
-                    }
-                }
-            }
-        })
     }
 
     override fun onMarkerClick(p0: Marker?) : Boolean {
@@ -148,23 +117,6 @@ class MapsActivity :
 
     override fun onMapClick(p0: LatLng?) {
         showInfoMarkers(!isShowingInfo)
-    }
-
-    private fun addMarkerAtLocation(location: LatLng, locationName: String, postLocationData: PostLocation) {
-        val baseMarkerOptions = MarkerOptions().position(location)
-        val pinMarkerOptions = baseMarkerOptions
-            //.icon(BitmapDescriptorFactory.defaultMarker(postLocationData.colour))
-
-        val mkr = viewModel.mMap.addMarker(pinMarkerOptions)
-        mkr.tag = postLocationData
-        markers.add(mkr)
-
-        val infoMkr = viewModel.mMap.addMarker(baseMarkerOptions.anchor(0.5f, 2.25f))
-        infoMkr.setIcon(BitmapDescriptorFactory.fromBitmap(iconFactory.makeIcon(locationName)))
-        infoMkr.tag = postLocationData
-        infoMkr.isVisible = false
-        infoMarkers.add(infoMkr)
-        updateInfoBasedOnZoom()
     }
 
     private fun getTrimmedCaption(caption: String): String {

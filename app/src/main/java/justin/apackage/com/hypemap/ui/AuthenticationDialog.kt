@@ -43,7 +43,6 @@ class AuthenticationDialog(context: Context,
 
         webView.settings.javaScriptEnabled = true
         Log.d(TAG, "Requesting url: $requestUrl")
-        webView.loadUrl(requestUrl)
         webView.webViewClient = object: WebViewClient() {
             override fun onPageFinished(view: WebView,
                                         url: String) {
@@ -61,5 +60,6 @@ class AuthenticationDialog(context: Context,
                 }
             }
         }
+        webView.loadUrl(requestUrl)
     }
 }

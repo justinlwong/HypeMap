@@ -54,3 +54,12 @@ interface UserDao {
     @Query("DELETE from users")
     fun deleteAll()
 }
+
+@Dao
+interface LocationDao {
+    @Query("SELECT * from locations WHERE locationId = :locationId")
+    fun getLocation(locationId: String): Location?
+
+    @Insert(onConflict = REPLACE)
+    fun insert(location: Location)
+}

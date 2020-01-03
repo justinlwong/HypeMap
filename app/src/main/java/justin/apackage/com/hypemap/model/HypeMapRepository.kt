@@ -5,7 +5,6 @@ import android.app.Application
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.LiveData
-import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import io.reactivex.Maybe
@@ -21,8 +20,6 @@ import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 /**
  * A repository class for managing local data and network requests
@@ -31,11 +28,11 @@ import java.util.concurrent.TimeUnit
  */
 @SuppressLint("CheckResult")
 class HypeMapRepository(private val application: Application) {
-    private val gson: Gson by lazy { GsonBuilder().create()}
     private val instagramService : InstagramService by lazy {setupRetrofit()}
     private val hypeMapDatabase = HypeMapDatabase.getInstance(application)
-    private val postDao: PostDao = hypeMapDatabase?.postDao()!!
-    private val userDao: UserDao = hypeMapDatabase?.userDao()!!
+    private val postDao: PostDao = hypeMapDatabase!!.postDao()
+    private val userDao: UserDao = hypeMapDatabase!!.userDao()
+    private val locationDao: LocationDao = hypeMapDatabase!!.locationDao()
     private val ioScheduler: Scheduler = Schedulers.io()
 
     companion object {
@@ -46,13 +43,8 @@ class HypeMapRepository(private val application: Application) {
          return postDao.getPosts()
     }
 
-    fun updatePostsPeriodically() {
-        val scheduler = Schedulers.from(Executors.newSingleThreadExecutor())
-        val delay: Long = 0
-        Observable.interval(delay, 2, TimeUnit.MINUTES, scheduler)
-            .subscribe { n -> Log.d(TAG, "Updating periodically")
-                updatePosts()
-            }
+    fun getUserPosts(userName: String): List<PostLocation> {
+        return postDao.getUserPosts(userName)
     }
 
     fun updatePosts() {
@@ -61,10 +53,6 @@ class HypeMapRepository(private val application: Application) {
                 .observeOn(Schedulers.computation())
                 .subscribe()
         }
-    }
-
-    fun updatePost(post: PostLocation) {
-        postDao.update(post)
     }
 
     fun addUser(userName: String) {
@@ -79,7 +67,7 @@ class HypeMapRepository(private val application: Application) {
         }
     }
 
-    private fun fetchPosts(users: List<User>): Observable<Pair<RawPost, Response<ResponseBody>>> {
+    private fun fetchPosts(users: List<User>): Observable<Pair<RawPost, Location>> {
         return Observable.defer{ Observable.just(users)}
             .flatMapIterable { usersList -> usersList }
             .flatMapSingle { instagramService.getUserPage(getCookie(INSTAGRAM_COOKIE_KEY), it.userName)}
@@ -92,11 +80,25 @@ class HypeMapRepository(private val application: Application) {
             .flatMapIterable { posts -> posts }
             .flatMap(
                 { post ->
-                    instagramService.getCoordinates(getCookie(INSTAGRAM_COOKIE_KEY), post.locationId).toObservable()},
-                { post: RawPost, response: Response<ResponseBody> -> Pair(post, response)})
+                    val location = locationDao.getLocation(post.locationId)
+                    if (location != null) {
+                        Single.just(location).toObservable()
+                    } else {
+                        instagramService
+                            .getCoordinates(getCookie(INSTAGRAM_COOKIE_KEY), post.locationId)
+                            .flatMap { response ->
+                                val bodyString = response.body()?.string()
+                                Single.just(Parser.getLocation(bodyString))
+                            }
+                            .toObservable()
+                    }
+                },
+                { post: RawPost, location: Location ->
+                    locationDao.insert(location)
+                    Pair(post, location)})
             .onErrorResumeNext(Observable.empty())
-            .doOnNext { result ->
-                insertPost(result.first, result.second.body()?.string())
+            .doOnNext {
+                insertPost(it.first, it.second)
             }
             .subscribeOn(ioScheduler)
     }
@@ -123,76 +125,32 @@ class HypeMapRepository(private val application: Application) {
     }
 
     @Synchronized
-    private fun insertPost(post: RawPost, response: String?) {
-        Parser.getLocation(post, response)?.let { postLocation ->
-            postLocation.visible = userDao.getUser(postLocation.userName).visible
-            postDao.insert(postLocation)
-        }
-    }
-
-    fun removeUser(userName: String) {
-        ioScheduler.scheduleDirect {
-            userDao.delete(userName)
-            postDao.delete(userName)
-        }
-
+    private fun insertPost(post: RawPost, location: Location) {
+        val postLocation = PostLocation(
+            post.id,
+            post.userName,
+            post.locationName,
+            post.locationId,
+            location.latitude,
+            location.longitude,
+            post.postUrl,
+            post.linkUrl,
+            post.caption,
+            post.timestamp)
+        postDao.insert(postLocation)
     }
 
     fun getUsers() : LiveData<List<User>> {
         return userDao.getUsers()
     }
 
-    fun getUser(userName: String) : User {
-        return userDao.getUser(userName)
-    }
-
-    fun updateUser(user: User) {
-        userDao.update(user)
-    }
-
-    fun removeAll() {
-        ioScheduler.scheduleDirect {
-            postDao.deleteAll()
-            userDao.deleteAll()
-        }
-    }
-
-    fun showUserMarkers(userName: String, visible: Boolean) {
-        Log.d(TAG, "Setting $userName to visibility: $visible")
-        ioScheduler.scheduleDirect {
-            val user = userDao.getUser(userName)
-            user.visible = visible
-            val posts = postDao.getUserPosts(userName)
-            for (post in posts) {
-                Log.d(TAG, "Overwriting ${post.locationName}")
-                post.visible = visible
-                postDao.update(post)
-            }
-            userDao.update(user)
-        }
-    }
-
-    fun filterMarkersByTime(timeThreshold: Long) {
-        ioScheduler.scheduleDirect {
-            val users = userDao.getCurrentUsers()
-            for (user in users) {
-                val posts = postDao.getUserPosts(user.userName)
-                for (post in posts) {
-                    Log.d(TAG, "Overwriting ${post.locationName}")
-                    val postTime = post.timestamp
-                    if (postTime < timeThreshold) {
-                        post.visible = false
-                    } else {
-                        post.visible = user.visible
-                    }
-                    postDao.update(post)
-                }
-                userDao.update(user)
-            }
-        }
+    private fun getCookie(key: String) : String {
+        val preferences = application.getSharedPreferences(HYPEMAP_SHARED_PREF, Context.MODE_PRIVATE)
+        return preferences.getString(key, "") ?: ""
     }
 
     private fun setupRetrofit() : InstagramService {
+        val gson = GsonBuilder().setLenient().create()
         // Retrofit builder
         return Retrofit.Builder()
             .baseUrl(HypeMapConstants.IG_URL)
@@ -200,10 +158,5 @@ class HypeMapRepository(private val application: Application) {
             .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
             .build()
             .create(InstagramService::class.java)
-    }
-
-    private fun getCookie(key: String) : String {
-        val preferences = application.getSharedPreferences(HYPEMAP_SHARED_PREF, Context.MODE_PRIVATE)
-        return preferences.getString(key, "") ?: ""
     }
 }

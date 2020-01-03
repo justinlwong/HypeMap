@@ -25,7 +25,6 @@ object Parser {
         val user = User(
             userName = userName,
             profilePicUrl = userJson.getString("profile_pic_url"),
-            visible = true,
             colour = ((0..11).shuffled().first() * 30).toFloat()
         )
 
@@ -77,7 +76,7 @@ object Parser {
     }
 
     @JvmStatic
-    fun getLocation(post: RawPost, response: String?): PostLocation? {
+    fun getLocation(response: String?): Location? {
         if (response != null) {
             val jsonObj = JSONObject(response)
 
@@ -91,19 +90,7 @@ object Parser {
             if (!latitude.isNaN() && !longitude.isNaN()) {
 
                 Log.d(TAG, "location $id mapped to $latitude, $longitude")
-                return PostLocation(
-                    id,
-                    post.userName,
-                    post.locationName,
-                    post.locationId,
-                    latitude,
-                    longitude,
-                    post.postUrl,
-                    post.linkUrl,
-                    post.caption,
-                    post.timestamp,
-                    false
-                )
+                return Location(id, latitude, longitude)
             }
         } else {
             Log.d(TAG, "Bad location response")
