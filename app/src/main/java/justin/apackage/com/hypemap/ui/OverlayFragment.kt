@@ -13,9 +13,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.maps.android.ui.IconGenerator
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 import justin.apackage.com.hypemap.R
 import justin.apackage.com.hypemap.model.HypeMapViewModel
 import justin.apackage.com.hypemap.model.PostLocation
@@ -97,12 +98,24 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
     }
 
     override fun onActiveUserUpdate(userName: String) {
+        showOnlyUserPosts(userName)
+    }
+
+    private fun showOnlyUserPosts(userName: String) {
         activeUser = userName
-        viewModel.getUserMarkers().entries.forEach { entry ->
-            val name = entry.key
-            val markers = entry.value
-            markers?.forEach {
-                it.isVisible = activeUser == name
+        viewModel.mMap.clear()
+        Schedulers.io().scheduleDirect {
+            val posts = viewModel.getPostLocationsBlocking()
+            posts?.forEach { post ->
+                if (post.userName == activeUser) {
+                    AndroidSchedulers.mainThread().scheduleDirect {
+                        addMarkerAtLocation(
+                            LatLng(post.latitude, post.longitude),
+                            post.locationName,
+                            post
+                        )
+                    }
+                }
             }
         }
     }
@@ -140,13 +153,6 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
         val infoMkr = viewModel.mMap.addMarker(baseMarkerOptions.anchor(0.5f, 2.25f))
         infoMkr.setIcon(BitmapDescriptorFactory.fromBitmap(iconFactory.makeIcon(locationName)))
         infoMkr.tag = postLocationData
-
-        var userMarkers: MutableList<Marker>? = viewModel.getUserMarkers()[postLocationData.userName]
-        if (userMarkers == null) {
-            userMarkers = mutableListOf()
-        }
-        userMarkers.add(mkr)
-        userMarkers.add(infoMkr)
     }
 
     private fun zoomTo(zoomLevel: Float) {

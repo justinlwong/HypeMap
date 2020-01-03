@@ -10,7 +10,10 @@ import androidx.room.Update
 @Dao
 interface PostDao {
     @Query("SELECT * from posts")
-    fun getPosts(): LiveData<List<PostLocation>?>
+    fun getPosts(): LiveData<List<PostLocation>>
+
+    @Query("SELECT * from posts")
+    fun getPostsBlocking(): List<PostLocation>
 
     @Query("SELECT * from posts WHERE userName = :userName")
     fun getUserPosts(userName: String): List<PostLocation>

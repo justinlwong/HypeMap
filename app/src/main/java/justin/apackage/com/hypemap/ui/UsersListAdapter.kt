@@ -57,6 +57,7 @@ class UsersListAdapter(private val context: Context,
     fun setItems(users: List<User>) {
         this.users = users
         if (users.isNotEmpty()) {
+            activePosition = users.size - 1
             listener.onActiveUserUpdate(users[activePosition].userName)
         }
         notifyDataSetChanged()

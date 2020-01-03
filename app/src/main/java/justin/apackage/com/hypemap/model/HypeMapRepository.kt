@@ -39,8 +39,12 @@ class HypeMapRepository(private val application: Application) {
         private const val TAG = "HypeMapRepository"
     }
 
-    fun getPosts(): LiveData<List<PostLocation>?> {
+    fun getPosts(): LiveData<List<PostLocation>> {
          return postDao.getPosts()
+    }
+
+    fun getPostsBlocking(): List<PostLocation> {
+        return postDao.getPostsBlocking()
     }
 
     fun getUserPosts(userName: String): List<PostLocation> {
