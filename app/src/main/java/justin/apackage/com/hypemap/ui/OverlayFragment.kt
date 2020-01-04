@@ -145,7 +145,7 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
 
         val infoMkr = viewModel.mMap.addMarker(baseMarkerOptions.anchor(0.5f, 2.25f))
         infoMkr.setIcon(BitmapDescriptorFactory.fromBitmap(iconFactory.makeIcon(locationName)))
-        infoMkr.tag = postLocationData
+        infoMkr.tag = locationName
     }
 
     private fun zoomTo(zoomLevel: Float) {

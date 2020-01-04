@@ -78,31 +78,34 @@ class MapsActivity :
 
     override fun onMarkerClick(p0: Marker?) : Boolean {
         p0?.let { marker ->
-            viewModel.mMap.setPadding(0, 0, 0, 1100)
-            val zoom = viewModel.mMap.cameraPosition.zoom
-            var duration = 100f
-            if (zoom != 0f) {
-                duration = 300f * (12f / zoom)
-            }
 
-            viewModel.mMap.animateCamera(
-                CameraUpdateFactory.newLatLngZoom(marker.position, 16f),
-                duration.toInt(),
-                object : GoogleMap.CancelableCallback {
-                    override fun onCancel() {
-                    }
+            if (marker.tag is PostLocation) {
+                viewModel.mMap.setPadding(0, 0, 0, 1100)
+                val zoom = viewModel.mMap.cameraPosition.zoom
+                var duration = 100f
+                if (zoom != 0f) {
+                    duration = 300f * (12f / zoom)
+                }
 
-                    override fun onFinish() {
-                        marker.tag?.let { tag ->
-                            val postLocation: PostLocation = tag as PostLocation
-                            postLocation.run {
-                                Log.d(TAG, "Finished animation, Post info: $caption, $userName")
-                                showPopup(postUrl, linkUrl, userName, caption)
-                            }
+                viewModel.mMap.animateCamera(
+                    CameraUpdateFactory.newLatLngZoom(marker.position, 16f),
+                    duration.toInt(),
+                    object : GoogleMap.CancelableCallback {
+                        override fun onCancel() {
                         }
 
-                    }
-                })
+                        override fun onFinish() {
+                            marker.tag?.let { tag ->
+                                val postLocation: PostLocation = tag as PostLocation
+                                postLocation.run {
+                                    Log.d(TAG, "Finished animation, Post info: $caption, $userName")
+                                    showPopup(postUrl, linkUrl, userName, caption)
+                                }
+                            }
+
+                        }
+                    })
+            }
         }
         return true
     }
@@ -156,10 +159,6 @@ class MapsActivity :
 
     @Synchronized
     private fun showPopup(postUrl: String, linkUrl: String, userName: String, caption: String) {
-        if (popUp.isShowing) {
-            popUp.dismiss()
-        }
-
         webView.loadUrl(postUrl)
         popUp.setTitle(userName)
         //popUp.setMessage(getTrimmedCaption(caption))
