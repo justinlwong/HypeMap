@@ -40,10 +40,6 @@ class MapsActivity :
     private val viewModel by lazy {ViewModelProviders.of(this).get(HypeMapViewModel::class.java)}
     private lateinit var webView: WebView
     private lateinit var popUp: AlertDialog
-    private val markers: MutableList<Marker> = mutableListOf()
-    private val infoMarkers: MutableList<Marker> = mutableListOf()
-    private var isShowingInfo = false
-    private var curZoom = 0f
 
     companion object {
         private const val TAG = "MapsActivity"
@@ -82,11 +78,11 @@ class MapsActivity :
 
     override fun onMarkerClick(p0: Marker?) : Boolean {
         p0?.let { marker ->
-            viewModel.mMap.setPadding(0, 0, 0, 1300)
+            viewModel.mMap.setPadding(0, 0, 0, 1100)
             val zoom = viewModel.mMap.cameraPosition.zoom
             var duration = 100f
             if (zoom != 0f) {
-                duration = 300f * (12f / viewModel.mMap.cameraPosition.zoom)
+                duration = 300f * (12f / zoom)
             }
 
             viewModel.mMap.animateCamera(
@@ -112,11 +108,9 @@ class MapsActivity :
     }
 
     override fun onCameraMove() {
-        updateInfoBasedOnZoom()
     }
 
     override fun onMapClick(p0: LatLng?) {
-        showInfoMarkers(!isShowingInfo)
     }
 
     private fun getTrimmedCaption(caption: String): String {
@@ -168,7 +162,8 @@ class MapsActivity :
 
         webView.loadUrl(postUrl)
         popUp.setTitle(userName)
-        popUp.setMessage(getTrimmedCaption(caption))
+        //popUp.setMessage(getTrimmedCaption(caption))
+
         popUp.setButton(
             DialogInterface.BUTTON_NEUTRAL,
             "View")
@@ -187,24 +182,6 @@ class MapsActivity :
 
         popUp.show()
         Log.d(TAG, "Showing popup")
-    }
-
-    private fun showInfoMarkers(show: Boolean) {
-        isShowingInfo = show
-        for (infoMarker in infoMarkers) {
-            infoMarker.isVisible = show
-        }
-    }
-
-    private fun updateInfoBasedOnZoom() {
-        val zoom = viewModel.mMap.cameraPosition.zoom
-        if (curZoom != zoom) {
-            curZoom = zoom
-            when {
-                zoom > 12f -> showInfoMarkers(true)
-                else -> showInfoMarkers(isShowingInfo)
-            }
-        }
     }
 
     private fun addListeners() {

@@ -1,11 +1,11 @@
 package justin.apackage.com.hypemap.ui
 
+import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.inputmethod.EditorInfo
-import android.widget.Toast
+import android.widget.EditText
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
@@ -34,6 +34,7 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
     private lateinit var usersListAdapter: UsersListAdapter
     private val iconFactory by lazy{ IconGenerator(activity!!.applicationContext) }
     private var activeUser: String? = null
+    private val addUserPopup: AlertDialog by lazy {createPopUp()}
 
     companion object {
         private const val TAG = "OverlayFragment"
@@ -46,6 +47,7 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
         viewModel = activity?.run {
             ViewModelProviders.of(this).get(HypeMapViewModel::class.java)
         } ?: throw Exception("Invalid Activity")
+
     }
 
     override fun onCreateView(inflater: LayoutInflater,
@@ -69,17 +71,8 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
 
         usersRecyclerView.adapter = usersListAdapter
 
-        getUserEditText?.setOnEditorActionListener { v, actionId, event ->
-            if (actionId == EditorInfo.IME_ACTION_DONE) {
-                val name: String = getUserEditText.text.toString().trim()
-                if (name != "") {
-                    viewModel.addUser(name)
-                    Toast.makeText(context, "Fetching user posts...", Toast.LENGTH_LONG).show()
-                } else {
-                    Toast.makeText(context, "Please continue typing", Toast.LENGTH_SHORT).show()
-                }
-            }
-            return@setOnEditorActionListener false
+        addUserButton.setOnClickListener {
+            addUserPopup.show()
         }
 
         worldZoomButton?.setOnClickListener {
@@ -158,4 +151,34 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
     private fun zoomTo(zoomLevel: Float) {
         viewModel.mMap.animateCamera(CameraUpdateFactory.zoomTo(zoomLevel))
     }
+
+    private fun createPopUp(): AlertDialog {
+        val popupBuilder = AlertDialog.Builder(context)
+
+        val editText = EditText(context)
+
+        popupBuilder.setView(editText)
+
+        popupBuilder.setNegativeButton(
+            "Close")
+        { dialog, _ ->
+            dialog.dismiss()
+        }
+
+        popupBuilder.setPositiveButton(
+            "OK")
+        { dialog, _ ->
+            viewModel.addUser(editText.text.toString())
+            dialog.dismiss()
+        }
+
+        popupBuilder.setOnDismissListener {
+            viewModel.mMap.setPadding(0, 0, 0, 0)
+        }
+
+        popupBuilder.setTitle("Add a user to follow")
+
+        return popupBuilder.create()
+    }
+
 }

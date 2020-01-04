@@ -1,27 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:context=".ui.OverlayFragment">
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.OverlayFragment">
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:focusable="true"
         android:focusableInTouchMode="true">
-
-        <EditText
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="5dp"
-            android:padding="5dp"
-            android:layout_alignParentStart="true"
-            android:id="@+id/getUserEditText"
-            android:background="@color/white"
-            android:inputType="text"
-            android:imeOptions="actionDone"
-            android:hint="@string/follow_hint"/>
 
         <LinearLayout
             android:id="@+id/zoomList"
@@ -60,8 +48,18 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_above="@id/zoomList"
-            android:paddingStart="5dp">
+            android:padding="5dp"
+            android:orientation="horizontal"
+            android:layout_above="@id/zoomList">
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/addUserButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:backgroundTint="@color/white"
+                android:src="@android:drawable/ic_input_add"
+                android:tint="@color/grey"/>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:layout_width="match_parent"
