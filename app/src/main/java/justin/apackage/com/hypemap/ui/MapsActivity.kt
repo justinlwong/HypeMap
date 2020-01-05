@@ -140,7 +140,7 @@ class MapsActivity :
     }
 
     private fun createPopUp(): AlertDialog {
-        val postPopupBuilder = AlertDialog.Builder(this)
+        val postPopupBuilder = AlertDialog.Builder(this, R.style.CustomAlertDialog)
 
         postPopupBuilder.setView(webView)
 

@@ -12,4 +12,9 @@
         <item name="android:textSize">10sp</item>
     </style>
 
+    <style name="CustomAlertDialog" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="android:windowBackground">@drawable/popup_background</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
 </resources>

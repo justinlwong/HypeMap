@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.FrameLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
@@ -153,32 +154,32 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
     }
 
     private fun createPopUp(): AlertDialog {
-        val popupBuilder = AlertDialog.Builder(context)
-
+        val popupBuilder = AlertDialog.Builder(context, R.style.CustomAlertDialog)
         val editText = EditText(context)
+        val container = FrameLayout(context)
+        val params = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT)
+        params.marginStart = 20
+        params.marginEnd = 20
+        editText.layoutParams = params
+        container.removeAllViews()
+        container.addView(editText)
 
-        popupBuilder.setView(editText)
-
-        popupBuilder.setNegativeButton(
-            "Close")
-        { dialog, _ ->
-            dialog.dismiss()
-        }
-
-        popupBuilder.setPositiveButton(
-            "OK")
-        { dialog, _ ->
-            viewModel.addUser(editText.text.toString())
-            dialog.dismiss()
-        }
-
-        popupBuilder.setOnDismissListener {
-            viewModel.mMap.setPadding(0, 0, 0, 0)
-        }
-
-        popupBuilder.setTitle("Add a user to follow")
+        popupBuilder.setView(container)
+            .setNegativeButton("Close")
+                { dialog, _ ->
+                    dialog.dismiss()
+                }
+            .setPositiveButton("OK")
+                { dialog, _ ->
+                    viewModel.addUser(editText.text.toString())
+                    dialog.dismiss()
+                }
+            .setOnDismissListener {
+                viewModel.mMap.setPadding(0, 0, 0, 0)
+            }
+            .setTitle("Add a user to follow")
 
         return popupBuilder.create()
     }
-
 }

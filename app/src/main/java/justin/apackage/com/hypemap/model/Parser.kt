@@ -13,10 +13,15 @@ object Parser {
     private const val TAG = "Parser"
 
     @JvmStatic
-    fun getUserWrapper(response: String): UserWrapper {
+    fun getUserWrapper(response: String): UserWrapper? {
         val postsList = mutableListOf<RawPost>()
 
         val obj = JSONObject(response)
+
+        if (obj.optJSONObject("graphql") == null) {
+            return null
+        }
+
         val userJson: JSONObject = obj.getJSONObject("graphql")
             .getJSONObject("user")
 
