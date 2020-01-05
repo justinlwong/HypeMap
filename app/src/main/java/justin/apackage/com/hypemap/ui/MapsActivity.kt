@@ -84,6 +84,10 @@ class MapsActivity :
                         }
 
                         override fun onFinish() {
+                            val infoMarker = viewModel.getInfoMarkersMap()[post.id]
+                            if (infoMarker != null) {
+                                infoMarker.isVisible = true
+                            }
                             val postDialog = PostDialog.newInstance(post)
                             postDialog.show(supportFragmentManager, "postDialog")
                         }
@@ -103,7 +107,7 @@ class MapsActivity :
 
     private fun showInfoMarkers(showStatus: Boolean) {
         curInfoStatus = showStatus
-        viewModel.getInfoMarkers().forEach { marker ->
+        for (( _, marker) in viewModel.getInfoMarkersMap()) {
             marker.isVisible = curInfoStatus
         }
     }

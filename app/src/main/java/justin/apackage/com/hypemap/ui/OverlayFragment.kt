@@ -96,7 +96,7 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
 
     private fun showOnlyUserPosts(userName: String) {
         activeUser = userName
-        viewModel.mMap.clear()
+        clearMarkers()
         Schedulers.io().scheduleDirect {
             val posts = viewModel.getPostLocationsBlocking()
             posts?.forEach { post ->
@@ -121,7 +121,7 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
         })
 
         viewModel.getPostLocations().observe(this, Observer { posts ->
-            viewModel.mMap.clear()
+            clearMarkers()
             if (activeUser != null) {
                 posts?.let {
                     it.filter { post -> post.userName == activeUser }.forEach { post ->
@@ -145,7 +145,7 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
         val infoMkr = viewModel.mMap.addMarker(baseMarkerOptions.anchor(0.5f, 2.25f))
         infoMkr.setIcon(BitmapDescriptorFactory.fromBitmap(iconFactory.makeIcon(locationName)))
         infoMkr.tag = locationName
-        viewModel.getInfoMarkers().add(infoMkr)
+        viewModel.getInfoMarkersMap()[postLocationData.id] = infoMkr
     }
 
     private fun zoomTo(zoomLevel: Float) {
@@ -180,5 +180,10 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
             .setTitle("Add a user to follow")
 
         return popupBuilder.create()
+    }
+
+    private fun clearMarkers() {
+        viewModel.mMap.clear()
+        viewModel.getInfoMarkersMap().clear()
     }
 }
