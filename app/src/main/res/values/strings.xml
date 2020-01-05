@@ -16,4 +16,8 @@
     <string name="follow_hint">Add new user to follow</string>
     <string name="recent_only">Recent only</string>
     <string name="login">Login</string>
+
+    <!-- Dialog -->
+    <string name="view">View</string>
+    <string name="close">Close</string>
 </resources>

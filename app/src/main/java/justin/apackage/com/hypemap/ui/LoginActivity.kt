@@ -30,9 +30,9 @@ class LoginActivity : AppCompatActivity(), AuthenticationListener {
     }
 
     fun onClick(view: View) {
-        val dialog = AuthenticationDialog(this, this)
-        dialog.setCancelable(true)
-        dialog.show()
+        val dialog = AuthenticationDialog(this)
+        dialog.isCancelable = true
+        dialog.show(supportFragmentManager, "AuthDialog")
     }
 
     override fun onCookieReceived(cookie: String) {

@@ -12,9 +12,20 @@
         <item name="android:textSize">10sp</item>
     </style>
 
-    <style name="CustomAlertDialog" parent="Theme.AppCompat.Light.Dialog.Alert">
+    <style name="BasicDialog" parent="Theme.AppCompat.Light.Dialog.Alert">
         <item name="android:windowBackground">@drawable/popup_background</item>
         <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <style name="PostDialog" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="android:windowBackground">@drawable/popup_background</item>
+        <item name="android:windowAnimationStyle">@style/SlideInDialog</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <style name="SlideInDialog" parent="@android:style/Animation.Activity">
+        <item name="android:windowEnterAnimation">@anim/slide_in</item>
+        <item name="android:windowExitAnimation">@anim/slide_out</item>
     </style>
 
 </resources>

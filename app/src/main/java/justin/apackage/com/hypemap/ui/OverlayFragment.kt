@@ -48,7 +48,6 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
         viewModel = activity?.run {
             ViewModelProviders.of(this).get(HypeMapViewModel::class.java)
         } ?: throw Exception("Invalid Activity")
-
     }
 
     override fun onCreateView(inflater: LayoutInflater,
@@ -143,10 +142,10 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
         val mkr = viewModel.mMap.addMarker(baseMarkerOptions)
         mkr.tag = postLocationData
 
-
         val infoMkr = viewModel.mMap.addMarker(baseMarkerOptions.anchor(0.5f, 2.25f))
         infoMkr.setIcon(BitmapDescriptorFactory.fromBitmap(iconFactory.makeIcon(locationName)))
         infoMkr.tag = locationName
+        viewModel.getInfoMarkers().add(infoMkr)
     }
 
     private fun zoomTo(zoomLevel: Float) {
@@ -154,7 +153,7 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
     }
 
     private fun createPopUp(): AlertDialog {
-        val popupBuilder = AlertDialog.Builder(context, R.style.CustomAlertDialog)
+        val popupBuilder = AlertDialog.Builder(context, R.style.BasicDialog)
         val editText = EditText(context)
         val container = FrameLayout(context)
         val params = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
