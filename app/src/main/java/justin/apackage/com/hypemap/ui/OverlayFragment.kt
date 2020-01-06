@@ -90,6 +90,13 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
         startObservers()
     }
 
+    override fun onStart() {
+        super.onStart()
+        activeUser?.let {
+            showOnlyUserPosts(it)
+        }
+    }
+
     override fun onActiveUserUpdate(userName: String) {
         showOnlyUserPosts(userName)
     }

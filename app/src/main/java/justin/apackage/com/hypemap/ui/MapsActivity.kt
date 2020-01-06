@@ -5,7 +5,9 @@ import android.util.Log
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.FragmentTransaction
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import androidx.work.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -15,6 +17,8 @@ import com.google.android.gms.maps.model.Marker
 import justin.apackage.com.hypemap.R
 import justin.apackage.com.hypemap.model.HypeMapViewModel
 import justin.apackage.com.hypemap.model.PostLocation
+import justin.apackage.com.hypemap.worker.UpdatePostsWorker
+import java.util.concurrent.TimeUnit
 
 /**
  * The core activity which shows the map and instagram post data as clickable markers
@@ -52,6 +56,9 @@ class MapsActivity :
         transaction.replace(R.id.overlay_ui, overlayFragment)
         transaction.commit()
         postDialog = PostDialog()
+
+        // Start update work
+        startUpdateWork()
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -117,4 +124,30 @@ class MapsActivity :
         viewModel.mMap.setOnCameraMoveListener(this)
         viewModel.mMap.setOnMapClickListener(this)
     }
+
+    private fun startUpdateWork() {
+        val work = createWorkRequest(Data.EMPTY)
+        WorkManager.getInstance().enqueueUniquePeriodicWork("Smart work", ExistingPeriodicWorkPolicy.KEEP, work)
+
+        // Observe the result od the work
+        WorkManager.getInstance().getWorkInfoByIdLiveData(work.id)
+            .observe(this, Observer { workInfo ->
+                if (workInfo != null && workInfo.state == WorkInfo.State.SUCCEEDED) {
+                    Log.d(TAG, "Finished update work successfully")
+                }
+            })
+    }
+
+    private fun createConstraints() = Constraints.Builder()
+        .setRequiredNetworkType(NetworkType.UNMETERED)  // if connected to WIFI
+        .setRequiresBatteryNotLow(true)                 // if the battery is not low
+        .setRequiresStorageNotLow(true)                 // if the storage is not low
+        .build()
+
+    private fun createWorkRequest(data: Data) = PeriodicWorkRequest.Builder(
+        UpdatePostsWorker::class.java, 3, TimeUnit.HOURS)
+        .setInputData(data)
+        .setConstraints(createConstraints())
+        .setBackoffCriteria(BackoffPolicy.LINEAR, PeriodicWorkRequest.MIN_BACKOFF_MILLIS, TimeUnit.MILLISECONDS)
+        .build()
 }

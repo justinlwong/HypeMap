@@ -47,10 +47,6 @@ class HypeMapRepository(private val application: Application) {
         return postDao.getPostsBlocking()
     }
 
-    fun getUserPosts(userName: String): List<PostLocation> {
-        return postDao.getUserPosts(userName)
-    }
-
     fun updatePosts() {
         ioScheduler.scheduleDirect {
             fetchPosts(userDao.getCurrentUsers())
