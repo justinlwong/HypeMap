@@ -24,6 +24,7 @@ import justin.apackage.com.hypemap.model.HypeMapViewModel
 import justin.apackage.com.hypemap.model.MarkerTag
 import justin.apackage.com.hypemap.model.User
 import kotlinx.android.synthetic.main.overlay_fragment.*
+import java.util.concurrent.TimeUnit
 
 /**
  * An overlay fragment which shows list of users and controls on top of map
@@ -171,11 +172,18 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
     private fun addMarkerAtLocation(location: LatLng, tag: MarkerTag) {
         val baseMarkerOptions = MarkerOptions().position(location)
 
-        val mkr = viewModel.mMap.addMarker(baseMarkerOptions)
-        mkr.tag = tag
+        val twoDaysAgo: Long = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()) - TimeUnit.DAYS.toSeconds(1)
 
-        val infoMkr = viewModel.mMap.addMarker(baseMarkerOptions.anchor(0.5f, 2.25f))
-        infoMkr.setIcon(BitmapDescriptorFactory.fromBitmap(iconFactory.makeIcon(tag.locationName)))
+        var mainOptions = baseMarkerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+        if (tag.timestamp > twoDaysAgo) {
+            mainOptions = baseMarkerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA))
+        }
+        val mainMarker = viewModel.mMap.addMarker(mainOptions)
+        mainMarker.tag = tag
+
+        val infoOptions = baseMarkerOptions.anchor(0.5f, 2.25f)
+            .icon(BitmapDescriptorFactory.fromBitmap(iconFactory.makeIcon(tag.locationName)))
+        val infoMkr = viewModel.mMap.addMarker(infoOptions)
         infoMkr.tag = tag.locationName
         viewModel.getInfoMarkersMap()[tag.id] = infoMkr
     }
