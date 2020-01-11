@@ -39,11 +39,15 @@ class HypeMapRepository(private val application: Application) {
         private const val TAG = "HypeMapRepository"
     }
 
-    fun getPosts(): LiveData<List<PostLocation>> {
+    fun getLocation(locationId: String): Location? {
+        return locationDao.getLocation(locationId)
+    }
+
+    fun getPosts(): LiveData<List<Post>> {
          return postDao.getPosts()
     }
 
-    fun getPostsBlocking(): List<PostLocation> {
+    fun getPostsBlocking(): List<Post> {
         return postDao.getPostsBlocking()
     }
 
@@ -57,18 +61,15 @@ class HypeMapRepository(private val application: Application) {
 
     fun addUser(userName: String) {
         ioScheduler.scheduleDirect {
-            fetchUser(userName)
-            .flatMapObservable { response ->
-                fetchPosts(listOf(userDao.getUser(userName)))
-            }
+            getRawPostObservable(fetchUser(userName).toObservable())
             .subscribeOn(ioScheduler)
             .observeOn(Schedulers.computation())
             .subscribe()
         }
     }
 
-    private fun fetchPosts(users: List<User>): Observable<Pair<RawPost, Location>> {
-        return Observable.defer{ Observable.just(users)}
+    private fun fetchPosts(users: List<User>): Observable<RawPost> {
+        val postsObservable = Observable.defer{ Observable.just(users)}
             .flatMapIterable { usersList -> usersList }
             .flatMapSingle { instagramService.getUserPage(getCookie(INSTAGRAM_COOKIE_KEY), it.userName)}
             .flatMapMaybe { response ->
@@ -77,38 +78,42 @@ class HypeMapRepository(private val application: Application) {
                     Maybe.just(it.posts)
                 }
             }
-            .flatMapIterable { posts -> posts }
-            .flatMap(
-                { post ->
-                    val location = locationDao.getLocation(post.locationId)
-                    if (location != null) {
-                        Single.just(location).toObservable()
-                    } else {
-                        instagramService
-                            .getCoordinates(getCookie(INSTAGRAM_COOKIE_KEY), post.locationId)
-                            .flatMap { response ->
-                                val bodyString = response.body()?.string()
-                                Single.just(Parser.getLocation(bodyString))
+        return getRawPostObservable(postsObservable)
+    }
+
+    private fun getRawPostObservable(postsObservable: Observable<List<RawPost>>): Observable<RawPost> {
+        return postsObservable.flatMapIterable { posts -> posts }
+            .flatMap { post ->
+                val location = locationDao.getLocation(post.locationId)
+                if (location != null) {
+                    insertPost(post)
+                    Single.just(post).toObservable()
+                } else {
+                    instagramService
+                        .getCoordinates(getCookie(INSTAGRAM_COOKIE_KEY), post.locationId)
+                        .flatMap { response ->
+                            val bodyString = response.body()?.string()
+                            val newLocation = Parser.getLocation(bodyString)
+                            newLocation?.let {
+                                locationDao.insert(newLocation)
+                                insertPost(post)
+                                Single.just(post)
                             }
-                            .toObservable()
-                    }
-                },
-                { post: RawPost, location: Location ->
-                    locationDao.insert(location)
-                    Pair(post, location)})
-            .onErrorResumeNext(Observable.empty())
-            .doOnNext {
-                insertPost(it.first, it.second)
+                        }
+                        .toObservable()
+                }
             }
+            .onErrorResumeNext(Observable.empty())
             .subscribeOn(ioScheduler)
     }
 
-    private fun fetchUser(userName: String): Single<Response<ResponseBody>> {
+    private fun fetchUser(userName: String): Maybe<List<RawPost>> {
         return instagramService.getUserPage(getCookie(INSTAGRAM_COOKIE_KEY), userName)
-            .doOnSuccess { response ->
+            .flatMapMaybe { response ->
                 val wrapper = getUserWrapper(response.body()?.string())
                 wrapper?.let {
                     userDao.insert(it.user)
+                    Maybe.just(it.posts)
                 }
             }
             .doOnError { error ->
@@ -125,14 +130,12 @@ class HypeMapRepository(private val application: Application) {
     }
 
     @Synchronized
-    private fun insertPost(post: RawPost, location: Location) {
-        val postLocation = PostLocation(
+    private fun insertPost(post: RawPost) {
+        val postLocation = Post(
             post.id,
-            post.userName,
+            post.userId,
             post.locationName,
             post.locationId,
-            location.latitude,
-            location.longitude,
             post.postUrl,
             post.linkUrl,
             post.caption,
@@ -142,6 +145,10 @@ class HypeMapRepository(private val application: Application) {
 
     fun getUsers() : LiveData<List<User>> {
         return userDao.getUsers()
+    }
+
+    fun getUser(userId: String): User? {
+        return userDao.getUser(userId)
     }
 
     private fun getCookie(key: String) : String {

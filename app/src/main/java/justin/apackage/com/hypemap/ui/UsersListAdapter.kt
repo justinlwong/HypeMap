@@ -16,7 +16,7 @@ class UsersListAdapter(private val context: Context,
                        private val listener: Listener) : RecyclerView.Adapter<UsersListAdapter.ViewHolder>() {
 
     interface Listener {
-        fun onActiveUserUpdate(userName: String)
+        fun onActiveUserUpdate(userId: String)
     }
 
     private var activePosition: Int = 0
@@ -49,7 +49,7 @@ class UsersListAdapter(private val context: Context,
         }
         holder.userImage.setOnClickListener {
             activePosition = position
-            listener.onActiveUserUpdate(users[position].userName)
+            listener.onActiveUserUpdate(users[position].userId)
             notifyDataSetChanged()
         }
     }
@@ -60,7 +60,7 @@ class UsersListAdapter(private val context: Context,
             if (oldUsers.isNotEmpty()) {
                 activePosition = users.size - 1
             }
-            listener.onActiveUserUpdate(users[activePosition].userName)
+            listener.onActiveUserUpdate(users[activePosition].userId)
         }
         this.users = users
         notifyDataSetChanged()

@@ -6,7 +6,7 @@ package justin.apackage.com.hypemap.model
  * @author Justin Wong
  */
 data class RawPost(var id: String,
-                   var userName: String,
+                   var userId: String,
                    var locationName: String,
                    var locationId: String,
                    var postUrl: String,

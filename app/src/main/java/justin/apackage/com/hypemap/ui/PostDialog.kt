@@ -3,15 +3,15 @@ package justin.apackage.com.hypemap.ui
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
 import com.squareup.picasso.Picasso
 import justin.apackage.com.hypemap.R
-import justin.apackage.com.hypemap.model.PostLocation
+import justin.apackage.com.hypemap.model.MarkerTag
 import kotlinx.android.synthetic.main.post_dialog.*
-import android.view.Gravity
 
 /**
  * A Dialog fragment for showing post
@@ -20,16 +20,16 @@ import android.view.Gravity
  */
 class PostDialog: DialogFragment() {
 
-    private lateinit var postLocation: PostLocation
+    private lateinit var tag: MarkerTag
 
     companion object {
-        private const val POST_LOCATION = "post_location"
+        private const val MARKER_TAG = "marker_tag"
 
-        fun newInstance(postLocation: PostLocation): PostDialog {
+        fun newInstance(tag: MarkerTag): PostDialog {
             val args = Bundle()
             val newFragment = PostDialog()
 
-            args.putParcelable(POST_LOCATION, postLocation)
+            args.putParcelable(MARKER_TAG, tag)
             newFragment.arguments = args
             return newFragment
         }
@@ -41,7 +41,7 @@ class PostDialog: DialogFragment() {
 
         val bundle = arguments
         if (bundle != null) {
-            postLocation = bundle.getParcelable(POST_LOCATION)
+            tag = bundle.getParcelable(MARKER_TAG)
         }
     }
 
@@ -61,16 +61,19 @@ class PostDialog: DialogFragment() {
             params.width = 1000
             params.height = 1200
             window.attributes = params
-            Picasso.with(context).load(postLocation.postUrl).into(postImage)
-            postTitle.text = postLocation.userName
-            if (postLocation.caption.isNotBlank()) {
-                postCaption.text = postLocation.caption
+            Picasso.with(context)
+                .load(tag.postUrl)
+                .placeholder(R.drawable.image_placeholder)
+                .into(postImage)
+            postTitle.text = tag.userName
+            if (tag.caption.isNotBlank()) {
+                postCaption.text = tag.caption
             } else {
                 postCaption.visibility = View.GONE
             }
             viewButton.setOnClickListener {
                 val i = Intent(Intent.ACTION_VIEW)
-                i.data = Uri.parse(postLocation.linkUrl)
+                i.data = Uri.parse(tag.linkUrl)
                 startActivity(i)
             }
 

@@ -10,28 +10,25 @@ import androidx.room.Update
 @Dao
 interface PostDao {
     @Query("SELECT * from posts")
-    fun getPosts(): LiveData<List<PostLocation>>
+    fun getPosts(): LiveData<List<Post>>
 
     @Query("SELECT * from posts")
-    fun getPostsBlocking(): List<PostLocation>
-
-    @Query("SELECT * from posts WHERE userName = :userName")
-    fun getUserPosts(userName: String): List<PostLocation>
+    fun getPostsBlocking(): List<Post>
 
     @Insert(onConflict = REPLACE)
-    fun insert(postLocationData: PostLocation)
+    fun insert(postData: Post)
 
     @Update
-    fun update(postLocationData: PostLocation)
+    fun update(postData: Post)
 
     @Query("DELETE from posts")
     fun deleteAll()
 
-    @Query("DELETE from posts WHERE userName = :userName")
-    fun delete(userName: String)
+    @Query("DELETE from posts WHERE userId = :userId")
+    fun delete(userId: String)
 
     @Query("SELECT * from posts WHERE id = :postId")
-    fun getPost(postId: String): List<PostLocation>
+    fun getPost(postId: String): List<Post>
 }
 
 @Dao
@@ -42,8 +39,8 @@ interface UserDao {
     @Query("SELECT * from users")
     fun getCurrentUsers(): List<User>
 
-    @Query("SELECT * from users WHERE userName = :userName")
-    fun getUser(userName: String): User
+    @Query("SELECT * from users WHERE userId = :userId")
+    fun getUser(userId: String): User
 
     @Insert(onConflict = REPLACE)
     fun insert(user: User)
@@ -51,8 +48,8 @@ interface UserDao {
     @Update
     fun update(user: User)
 
-    @Query("DELETE from users WHERE userName = :userName")
-    fun delete(userName: String)
+    @Query("DELETE from users WHERE userId = :userId")
+    fun delete(userId: String)
 
     @Query("DELETE from users")
     fun deleteAll()

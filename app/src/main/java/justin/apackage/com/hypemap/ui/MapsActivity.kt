@@ -16,7 +16,8 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import justin.apackage.com.hypemap.R
 import justin.apackage.com.hypemap.model.HypeMapViewModel
-import justin.apackage.com.hypemap.model.PostLocation
+import justin.apackage.com.hypemap.model.MarkerTag
+import justin.apackage.com.hypemap.model.Post
 import justin.apackage.com.hypemap.worker.UpdatePostsWorker
 import java.util.concurrent.TimeUnit
 
@@ -73,8 +74,8 @@ class MapsActivity :
 
     override fun onMarkerClick(p0: Marker?) : Boolean {
         p0?.let { marker ->
-            if (marker.tag is PostLocation) {
-                val post = marker.tag as PostLocation
+            if (marker.tag is MarkerTag) {
+                val tag = marker.tag as MarkerTag
                 viewModel.mMap.setPadding(0, 0, 0, 1100)
                 val zoom = viewModel.mMap.cameraPosition.zoom
                 var duration = 100f
@@ -91,11 +92,11 @@ class MapsActivity :
                         }
 
                         override fun onFinish() {
-                            val infoMarker = viewModel.getInfoMarkersMap()[post.id]
+                            val infoMarker = viewModel.getInfoMarkersMap()[tag.id]
                             if (infoMarker != null) {
                                 infoMarker.isVisible = true
                             }
-                            val postDialog = PostDialog.newInstance(post)
+                            val postDialog = PostDialog.newInstance(tag)
                             postDialog.show(supportFragmentManager, "postDialog")
                         }
                     })

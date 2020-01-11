@@ -26,8 +26,10 @@ object Parser {
             .getJSONObject("user")
 
         val userName = userJson.getString("username")
+        val userId = userJson.getString("id")
 
         val user = User(
+            userId = userId,
             userName = userName,
             profilePicUrl = userJson.getString("profile_pic_url"),
             colour = ((0..11).shuffled().first() * 30).toFloat()
@@ -64,7 +66,7 @@ object Parser {
                 val postId = node.getString("id")
                 val newPost = RawPost(
                     id = postId,
-                    userName = userName,
+                    userId = userId,
                     locationName = location.getString("name"),
                     locationId = location.getString("id"),
                     postUrl = node

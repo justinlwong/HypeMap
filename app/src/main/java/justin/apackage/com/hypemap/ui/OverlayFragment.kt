@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.FrameLayout
 import androidx.fragment.app.Fragment
@@ -20,7 +21,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import justin.apackage.com.hypemap.R
 import justin.apackage.com.hypemap.model.HypeMapViewModel
-import justin.apackage.com.hypemap.model.PostLocation
+import justin.apackage.com.hypemap.model.MarkerTag
 import justin.apackage.com.hypemap.model.User
 import kotlinx.android.synthetic.main.overlay_fragment.*
 
@@ -34,7 +35,7 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
     private lateinit var viewModel: HypeMapViewModel
     private lateinit var usersListAdapter: UsersListAdapter
     private val iconFactory by lazy{ IconGenerator(activity!!.applicationContext) }
-    private var activeUser: String? = null
+    private var activeUserId: String? = null
     private val addUserPopup: AlertDialog by lazy {createPopUp()}
 
     companion object {
@@ -92,28 +93,38 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
 
     override fun onStart() {
         super.onStart()
-        activeUser?.let {
+        activeUserId?.let {
             showOnlyUserPosts(it)
         }
     }
 
-    override fun onActiveUserUpdate(userName: String) {
-        showOnlyUserPosts(userName)
+    override fun onActiveUserUpdate(userId: String) {
+        showOnlyUserPosts(userId)
     }
 
-    private fun showOnlyUserPosts(userName: String) {
-        activeUser = userName
+    private fun showOnlyUserPosts(userId: String) {
+        activeUserId = userId
         clearMarkers()
         Schedulers.io().scheduleDirect {
             val posts = viewModel.getPostLocationsBlocking()
             posts?.forEach { post ->
-                if (post.userName == activeUser) {
+                if (post.userId == activeUserId) {
+                    val location = viewModel.getLocation(post.locationId)
+                    val user = viewModel.getUser(post.userId)
                     AndroidSchedulers.mainThread().scheduleDirect {
-                        addMarkerAtLocation(
-                            LatLng(post.latitude, post.longitude),
-                            post.locationName,
-                            post
-                        )
+                        if (user != null && location != null) {
+                            val tag = MarkerTag(post.id,
+                                user.userName,
+                                post.locationName,
+                                post.postUrl,
+                                post.linkUrl,
+                                post.caption,
+                                post.timestamp)
+
+                            addMarkerAtLocation(
+                                LatLng(location.latitude, location.longitude),
+                                tag)
+                        }
                     }
                 }
             }
@@ -127,32 +138,46 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
             }
         })
 
-        viewModel.getPostLocations().observe(this, Observer { posts ->
+        viewModel.getPosts().observe(this, Observer { posts ->
             clearMarkers()
-            if (activeUser != null) {
-                posts?.let {
-                    it.filter { post -> post.userName == activeUser }.forEach { post ->
-                        addMarkerAtLocation(
-                            LatLng(post.latitude, post.longitude),
-                            post.locationName,
-                            post
-                        )
+            if (activeUserId != null) {
+                Schedulers.io().scheduleDirect {
+                    posts?.let {
+                        it.filter { post -> post.userId == activeUserId }.forEach { post ->
+                            val location = viewModel.getLocation(post.locationId)
+                            val user = viewModel.getUser(post.userId)
+                            AndroidSchedulers.mainThread().scheduleDirect {
+                                if (user != null && location != null) {
+                                    val tag = MarkerTag(post.id,
+                                        user.userName,
+                                        post.locationName,
+                                        post.postUrl,
+                                        post.linkUrl,
+                                        post.caption,
+                                        post.timestamp)
+
+                                    addMarkerAtLocation(
+                                        LatLng(location.latitude, location.longitude),
+                                        tag)
+                                }
+                            }
+                        }
                     }
                 }
             }
         })
     }
 
-    private fun addMarkerAtLocation(location: LatLng, locationName: String, postLocationData: PostLocation) {
+    private fun addMarkerAtLocation(location: LatLng, tag: MarkerTag) {
         val baseMarkerOptions = MarkerOptions().position(location)
 
         val mkr = viewModel.mMap.addMarker(baseMarkerOptions)
-        mkr.tag = postLocationData
+        mkr.tag = tag
 
         val infoMkr = viewModel.mMap.addMarker(baseMarkerOptions.anchor(0.5f, 2.25f))
-        infoMkr.setIcon(BitmapDescriptorFactory.fromBitmap(iconFactory.makeIcon(locationName)))
-        infoMkr.tag = locationName
-        viewModel.getInfoMarkersMap()[postLocationData.id] = infoMkr
+        infoMkr.setIcon(BitmapDescriptorFactory.fromBitmap(iconFactory.makeIcon(tag.locationName)))
+        infoMkr.tag = tag.locationName
+        viewModel.getInfoMarkersMap()[tag.id] = infoMkr
     }
 
     private fun zoomTo(zoomLevel: Float) {
@@ -168,6 +193,8 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
         params.marginStart = 20
         params.marginEnd = 20
         editText.layoutParams = params
+        editText.setSingleLine()
+        editText.imeOptions = EditorInfo.IME_ACTION_DONE
         container.removeAllViews()
         container.addView(editText)
 

@@ -12,11 +12,11 @@ class HypeMapViewModel (application: Application) : AndroidViewModel(application
     lateinit var mMap: GoogleMap
     private val infoMkrsMap: MutableMap<String, Marker> = mutableMapOf()
 
-    fun getPostLocations(): LiveData<List<PostLocation>> {
+    fun getPosts(): LiveData<List<Post>> {
         return instaRepo.getPosts()
     }
 
-    fun getPostLocationsBlocking(): List<PostLocation>? {
+    fun getPostLocationsBlocking(): List<Post>? {
         return instaRepo.getPostsBlocking()
     }
 
@@ -28,7 +28,15 @@ class HypeMapViewModel (application: Application) : AndroidViewModel(application
         return instaRepo.getUsers()
     }
 
+    fun getUser(userId: String): User? {
+        return instaRepo.getUser(userId)
+    }
+
     fun getInfoMarkersMap(): MutableMap<String, Marker> {
         return infoMkrsMap
+    }
+
+    fun getLocation(locationId: String): Location? {
+        return instaRepo.getLocation(locationId)
     }
 }
