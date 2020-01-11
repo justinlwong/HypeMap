@@ -28,4 +28,10 @@
         <item name="android:windowExitAnimation">@anim/slide_out</item>
     </style>
 
+    <!-- Splash Screen Theme -->
+    <style name="SplashTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+        <item name="colorPrimaryDark">@color/colorAccent</item>
+    </style>
+
 </resources>

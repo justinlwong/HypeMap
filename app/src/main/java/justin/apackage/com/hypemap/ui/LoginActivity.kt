@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import justin.apackage.com.hypemap.HypeMapConstants.Companion.HYPEMAP_SHARED_PREF
 import justin.apackage.com.hypemap.HypeMapConstants.Companion.INSTAGRAM_ACCESS_TOKEN
 import justin.apackage.com.hypemap.HypeMapConstants.Companion.INSTAGRAM_COOKIE_KEY
+import justin.apackage.com.hypemap.R
 
 /**
  * A login activity to start instagram session
@@ -26,7 +27,7 @@ class LoginActivity : AppCompatActivity(), AuthenticationListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(justin.apackage.com.hypemap.R.layout.activity_login)
+        setContentView(R.layout.activity_login)
     }
 
     fun onClick(view: View) {
