@@ -20,16 +20,16 @@ import kotlinx.android.synthetic.main.post_dialog.*
  */
 class PostDialog: DialogFragment() {
 
-    private lateinit var tag: MarkerTag
+    private lateinit var tag: ArrayList<MarkerTag>
 
     companion object {
         private const val MARKER_TAG = "marker_tag"
 
-        fun newInstance(tag: MarkerTag): PostDialog {
+        fun newInstance(tag: ArrayList<MarkerTag>): PostDialog {
             val args = Bundle()
             val newFragment = PostDialog()
 
-            args.putParcelable(MARKER_TAG, tag)
+            args.putParcelableArrayList(MARKER_TAG, tag)
             newFragment.arguments = args
             return newFragment
         }
@@ -41,7 +41,7 @@ class PostDialog: DialogFragment() {
 
         val bundle = arguments
         if (bundle != null) {
-            tag = bundle.getParcelable(MARKER_TAG)
+            tag = bundle.getParcelableArrayList(MARKER_TAG)
         }
     }
 
@@ -62,18 +62,18 @@ class PostDialog: DialogFragment() {
             params.height = 1200
             window.attributes = params
             Picasso.with(context)
-                .load(tag.postUrl)
+                .load(tag.first().postUrl)
                 .placeholder(R.drawable.image_placeholder)
                 .into(postImage)
-            postTitle.text = tag.userName
-            if (tag.caption.isNotBlank()) {
-                postCaption.text = tag.caption
+            postTitle.text = tag.first().userName
+            if (tag.first().caption.isNotBlank()) {
+                postCaption.text = tag.first().caption
             } else {
                 postCaption.visibility = View.GONE
             }
             viewButton.setOnClickListener {
                 val i = Intent(Intent.ACTION_VIEW)
-                i.data = Uri.parse(tag.linkUrl)
+                i.data = Uri.parse(tag.first().linkUrl)
                 startActivity(i)
             }
 

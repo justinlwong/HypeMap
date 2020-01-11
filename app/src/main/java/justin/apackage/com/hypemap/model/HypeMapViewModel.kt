@@ -10,6 +10,7 @@ class HypeMapViewModel (application: Application) : AndroidViewModel(application
 
     private val instaRepo: HypeMapRepository = HypeMapRepository(application)
     lateinit var mMap: GoogleMap
+    private val mainMkrsMap: MutableMap<String, Marker> = mutableMapOf()
     private val infoMkrsMap: MutableMap<String, Marker> = mutableMapOf()
 
     fun getPosts(): LiveData<List<Post>> {
@@ -30,6 +31,10 @@ class HypeMapViewModel (application: Application) : AndroidViewModel(application
 
     fun getUser(userId: String): User? {
         return instaRepo.getUser(userId)
+    }
+
+    fun getMainMarkersMap(): MutableMap<String, Marker> {
+        return mainMkrsMap
     }
 
     fun getInfoMarkersMap(): MutableMap<String, Marker> {

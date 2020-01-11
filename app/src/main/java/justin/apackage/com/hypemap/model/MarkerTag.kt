@@ -6,6 +6,7 @@ import kotlinx.android.parcel.Parcelize
 @Parcelize
 data class MarkerTag(val id: String,
                      val userName: String,
+                     val locationId: String,
                      val locationName: String,
                      val postUrl: String,
                      val linkUrl: String,

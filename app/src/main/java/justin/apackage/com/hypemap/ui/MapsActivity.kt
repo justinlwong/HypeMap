@@ -74,8 +74,8 @@ class MapsActivity :
 
     override fun onMarkerClick(p0: Marker?) : Boolean {
         p0?.let { marker ->
-            if (marker.tag is MarkerTag) {
-                val tag = marker.tag as MarkerTag
+            val tagList = (marker.tag as MutableList<*>).filterIsInstance<MarkerTag>()
+            if (tagList.isNotEmpty()) {
                 viewModel.mMap.setPadding(0, 0, 0, 1100)
                 val zoom = viewModel.mMap.cameraPosition.zoom
                 var duration = 100f
@@ -92,11 +92,11 @@ class MapsActivity :
                         }
 
                         override fun onFinish() {
-                            val infoMarker = viewModel.getInfoMarkersMap()[tag.id]
+                            val infoMarker = viewModel.getInfoMarkersMap()[tagList.first().locationId]
                             if (infoMarker != null) {
                                 infoMarker.isVisible = true
                             }
-                            val postDialog = PostDialog.newInstance(tag)
+                            val postDialog = PostDialog.newInstance(tagList as ArrayList<MarkerTag>)
                             postDialog.show(supportFragmentManager, "postDialog")
                         }
                     })

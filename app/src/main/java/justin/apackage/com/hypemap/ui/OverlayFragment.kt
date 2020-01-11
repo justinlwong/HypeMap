@@ -116,6 +116,7 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
                         if (user != null && location != null) {
                             val tag = MarkerTag(post.id,
                                 user.userName,
+                                location.locationId,
                                 post.locationName,
                                 post.postUrl,
                                 post.linkUrl,
@@ -123,6 +124,7 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
                                 post.timestamp)
 
                             addMarkerAtLocation(
+                                location.locationId,
                                 LatLng(location.latitude, location.longitude),
                                 tag)
                         }
@@ -151,6 +153,7 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
                                 if (user != null && location != null) {
                                     val tag = MarkerTag(post.id,
                                         user.userName,
+                                        location.locationId,
                                         post.locationName,
                                         post.postUrl,
                                         post.linkUrl,
@@ -158,6 +161,7 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
                                         post.timestamp)
 
                                     addMarkerAtLocation(
+                                        location.locationId,
                                         LatLng(location.latitude, location.longitude),
                                         tag)
                                 }
@@ -169,23 +173,36 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
         })
     }
 
-    private fun addMarkerAtLocation(location: LatLng, tag: MarkerTag) {
+    private fun addMarkerAtLocation(locationId: String, location: LatLng, tag: MarkerTag) {
         val baseMarkerOptions = MarkerOptions().position(location)
-
-        val twoDaysAgo: Long = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()) - TimeUnit.DAYS.toSeconds(1)
-
-        var mainOptions = baseMarkerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
-        if (tag.timestamp > twoDaysAgo) {
-            mainOptions = baseMarkerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA))
+        val existingMarker = viewModel.getMainMarkersMap()[locationId]
+        if (existingMarker == null) {
+            val twoDaysAgo: Long = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()) - TimeUnit.DAYS.toSeconds(1)
+            var mainOptions = baseMarkerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+            if (tag.timestamp > twoDaysAgo) {
+                mainOptions = baseMarkerOptions.icon(
+                    BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA)
+                )
+            }
+            val mainMarker = viewModel.mMap.addMarker(mainOptions)
+            mainMarker.tag = listOf(tag)
+            viewModel.getMainMarkersMap()[locationId] = mainMarker
+        } else {
+            val tagList = (existingMarker.tag as? MutableList<*>)?.filterIsInstance<MarkerTag>()
+            tagList?.let {
+                val updatedList = tagList.toMutableList()
+                updatedList.add(tag)
+                existingMarker.tag = updatedList
+            }
         }
-        val mainMarker = viewModel.mMap.addMarker(mainOptions)
-        mainMarker.tag = tag
 
-        val infoOptions = baseMarkerOptions.anchor(0.5f, 2.25f)
-            .icon(BitmapDescriptorFactory.fromBitmap(iconFactory.makeIcon(tag.locationName)))
-        val infoMkr = viewModel.mMap.addMarker(infoOptions)
-        infoMkr.tag = tag.locationName
-        viewModel.getInfoMarkersMap()[tag.id] = infoMkr
+        if (viewModel.getInfoMarkersMap()[locationId] == null) {
+            val infoOptions = baseMarkerOptions.anchor(0.5f, 2.25f)
+                .icon(BitmapDescriptorFactory.fromBitmap(iconFactory.makeIcon(tag.locationName)))
+            val infoMkr = viewModel.mMap.addMarker(infoOptions)
+            infoMkr.tag = tag.locationName
+            viewModel.getInfoMarkersMap()[locationId] = infoMkr
+        }
     }
 
     private fun zoomTo(zoomLevel: Float) {
@@ -227,5 +244,6 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
     private fun clearMarkers() {
         viewModel.mMap.clear()
         viewModel.getInfoMarkersMap().clear()
+        viewModel.getMainMarkersMap().clear()
     }
 }
