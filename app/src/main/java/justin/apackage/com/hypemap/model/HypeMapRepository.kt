@@ -16,8 +16,6 @@ import justin.apackage.com.hypemap.HypeMapConstants
 import justin.apackage.com.hypemap.HypeMapConstants.Companion.HYPEMAP_SHARED_PREF
 import justin.apackage.com.hypemap.HypeMapConstants.Companion.INSTAGRAM_COOKIE_KEY
 import justin.apackage.com.hypemap.network.InstagramService
-import okhttp3.ResponseBody
-import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 

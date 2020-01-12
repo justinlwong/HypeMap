@@ -7,11 +7,11 @@
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/swipeRefreshLayout"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="400dp">
         <WebView
                 android:id="@+id/webView"
                 android:layout_width="match_parent"
-                android:layout_height="400dp">
+                android:layout_height="wrap_content">
         </WebView>
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 </FrameLayout>

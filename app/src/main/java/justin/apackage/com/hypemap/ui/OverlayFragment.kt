@@ -1,7 +1,11 @@
 package justin.apackage.com.hypemap.ui
 
 import android.app.AlertDialog
+import android.app.Dialog
+import android.content.DialogInterface
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
@@ -9,6 +13,7 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
@@ -38,7 +43,7 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
     private lateinit var usersListAdapter: UsersListAdapter
     private val iconFactory by lazy{ IconGenerator(activity!!.applicationContext) }
     private var activeUserId: String? = null
-    private val addUserPopup: AlertDialog by lazy {createPopUp()}
+    private val addUserPopup: AlertDialog by lazy { createPopUp() }
 
     companion object {
         private const val TAG = "OverlayFragment"
@@ -227,6 +232,24 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
         editText.layoutParams = params
         editText.setSingleLine()
         editText.imeOptions = EditorInfo.IME_ACTION_DONE
+        editText.setOnKeyListener { v, keyCode, event ->
+            if (event.action == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER) {
+                addUser(editText)
+                return@setOnKeyListener true
+            }
+            false
+        }
+        editText.addTextChangedListener(object: TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                addUserPopup.getButton(DialogInterface.BUTTON_POSITIVE).isEnabled = s?.trim().toString() != ""
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+            }
+        })
         container.removeAllViews()
         container.addView(editText)
 
@@ -236,9 +259,8 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
                     dialog.dismiss()
                 }
             .setPositiveButton("OK")
-                { dialog, _ ->
-                    viewModel.addUser(editText.text.toString())
-                    dialog.dismiss()
+                { _, _ ->
+                    addUser(editText)
                 }
             .setOnDismissListener {
                 viewModel.mMap.setPadding(0, 0, 0, 0)
@@ -246,6 +268,12 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
             .setTitle("Add a user to follow")
 
         return popupBuilder.create()
+    }
+
+    private fun addUser(editText: EditText) {
+        Toast.makeText(context, "Fetching user...", Toast.LENGTH_SHORT).show()
+        viewModel.addUser(editText.text.toString())
+        addUserPopup.dismiss()
     }
 
     private fun clearMarkers() {

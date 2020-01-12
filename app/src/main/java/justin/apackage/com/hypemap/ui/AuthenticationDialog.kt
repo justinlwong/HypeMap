@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.webkit.CookieManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -47,6 +48,8 @@ class AuthenticationDialog(val listener: AuthenticationListener): DialogFragment
     @SuppressLint("SetJavaScriptEnabled")
     override fun onResume() {
         super.onResume()
+
+        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
 
         webView.settings.javaScriptEnabled = true
         webView.settings.useWideViewPort = true
