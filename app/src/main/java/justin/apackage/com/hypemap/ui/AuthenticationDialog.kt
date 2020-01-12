@@ -2,7 +2,6 @@ package justin.apackage.com.hypemap.ui
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -23,7 +22,7 @@ import kotlinx.android.synthetic.main.auth_dialog.*
 class AuthenticationDialog(val listener: AuthenticationListener): DialogFragment() {
 
     private lateinit var redirectUrl: String
-    private lateinit var requestUrl: String
+    private lateinit var loginUrl: String
 
     companion object {
         const val TAG = "AuthenticationDialog"
@@ -33,11 +32,8 @@ class AuthenticationDialog(val listener: AuthenticationListener): DialogFragment
         super.onCreate(savedInstanceState)
         setStyle(STYLE_NO_FRAME, R.style.BasicDialog)
         val res = resources
-        val baseUrl = res.getString(R.string.base_url)
-        val clientId = res.getString(R.string.client_id)
         redirectUrl = res.getString(R.string.redirect_url)
-        requestUrl = "${baseUrl}oauth/authorize/?client_id=$clientId&redirect_uri=$redirectUrl" +
-                "&response_type=token&display=touch&scope=basic"
+        loginUrl = "${redirectUrl}accounts/login"
     }
 
     override fun onCreateView(
@@ -51,34 +47,32 @@ class AuthenticationDialog(val listener: AuthenticationListener): DialogFragment
     @SuppressLint("SetJavaScriptEnabled")
     override fun onResume() {
         super.onResume()
+
         webView.settings.javaScriptEnabled = true
         webView.settings.useWideViewPort = true
         webView.settings.loadWithOverviewMode = true
-        Log.d(TAG, "Requesting url: $requestUrl")
+        Log.d(TAG, "Requesting url: $loginUrl")
         webView.webViewClient = object: WebViewClient() {
 
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, url, favicon)
-                progressBar?.visibility = View.VISIBLE
+                swipeRefreshLayout?.isRefreshing = true
             }
 
             override fun onPageFinished(view: WebView,
                                         url: String) {
                 super.onPageFinished(view, url)
-                progressBar?.visibility = View.GONE
-                if (url.contains("access_token=")) {
-                    val uri = Uri.parse(url)
-                    val accessToken = uri.encodedFragment
-                    accessToken?.let {
-                        listener.onTokenReceived(it.substring(it.lastIndexOf("=") + 1))
-                    }
-                } else if (url == redirectUrl) {
+                swipeRefreshLayout?.isRefreshing = false
+                if (url == redirectUrl) {
                     val cookie = CookieManager.getInstance().getCookie(url)
                     listener.onCookieReceived(cookie ?: "")
                     dismiss()
                 }
             }
         }
-        webView.loadUrl(requestUrl)
+        swipeRefreshLayout.setOnRefreshListener {
+            webView.reload()
+        }
+        webView.loadUrl(loginUrl)
     }
 }

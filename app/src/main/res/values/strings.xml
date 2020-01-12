@@ -1,11 +1,9 @@
 <resources>
     <string name="app_name">HypeMap</string>
     <string name="title_activity_maps">HypeMap</string>
-    <string name="client_id">39beb678c1314253a9872dffe767c9b7</string>
 
     <!-- Network -->
     <string name="redirect_url">https://www.instagram.com/</string>
-    <string name="base_url">https://api.instagram.com/</string>
 
     <!-- Zoom Levels -->
     <string name="local">Local</string>

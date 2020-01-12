@@ -42,10 +42,4 @@ class LoginActivity : AppCompatActivity(), AuthenticationListener {
         val myIntent = Intent(this, MapsActivity::class.java)
         startActivity(myIntent)
     }
-
-    override fun onTokenReceived(accessToken: String) {
-        Log.d(TAG, "Received access_token: $accessToken")
-        val preferences = applicationContext.getSharedPreferences(HYPEMAP_SHARED_PREF, Context.MODE_PRIVATE)
-        preferences.edit().putString(INSTAGRAM_ACCESS_TOKEN, accessToken).apply()
-    }
 }

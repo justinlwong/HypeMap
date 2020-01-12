@@ -3,7 +3,7 @@
     <item android:drawable="@color/colorAccent" />
     <item>
         <bitmap
-            android:gravity="top"
-            android:src="@drawable/hypemap_logo" />
+            android:gravity="center"
+            android:src="@drawable/hypemap_splash" />
     </item>
 </layer-list>

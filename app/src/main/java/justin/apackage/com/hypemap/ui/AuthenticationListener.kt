@@ -7,5 +7,4 @@ package justin.apackage.com.hypemap.ui
  */
 interface AuthenticationListener {
     fun onCookieReceived(cookie: String)
-    fun onTokenReceived(accessToken: String)
 }
