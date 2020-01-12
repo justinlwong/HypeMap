@@ -20,4 +20,5 @@
     <!-- Dialog -->
     <string name="view">View</string>
     <string name="close">Close</string>
+    <string name="welcome">Welcome to HypeMap!</string>
 </resources>
