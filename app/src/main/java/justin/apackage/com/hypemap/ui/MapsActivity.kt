@@ -17,7 +17,6 @@ import com.google.android.gms.maps.model.Marker
 import justin.apackage.com.hypemap.R
 import justin.apackage.com.hypemap.model.HypeMapViewModel
 import justin.apackage.com.hypemap.model.MarkerTag
-import justin.apackage.com.hypemap.model.Post
 import justin.apackage.com.hypemap.worker.UpdatePostsWorker
 import java.util.concurrent.TimeUnit
 
@@ -35,7 +34,7 @@ class MapsActivity :
 
     private lateinit var overlayFragment: OverlayFragment
     private val viewModel by lazy {ViewModelProviders.of(this).get(HypeMapViewModel::class.java)}
-    private lateinit var postDialog: PostDialog
+    private lateinit var postContainerDialog: PostContainerDialog
     private var curInfoStatus: Boolean = false
 
     companion object {
@@ -56,7 +55,7 @@ class MapsActivity :
         val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
         transaction.replace(R.id.overlay_ui, overlayFragment)
         transaction.commit()
-        postDialog = PostDialog()
+        postContainerDialog = PostContainerDialog()
 
         // Start update work
         startUpdateWork()
@@ -74,33 +73,37 @@ class MapsActivity :
 
     override fun onMarkerClick(p0: Marker?) : Boolean {
         p0?.let { marker ->
-            val tagList = (marker.tag as MutableList<*>).filterIsInstance<MarkerTag>()
-            if (tagList.isNotEmpty()) {
-                viewModel.mMap.setPadding(0, 0, 0, 1100)
-                val zoom = viewModel.mMap.cameraPosition.zoom
-                var duration = 100f
-                if (zoom != 0f) {
-                    duration = 300f * (12f / zoom)
-                }
+            if (marker.tag is MutableList<*>) {
+                val tagList = (marker.tag as MutableList<*>).filterIsInstance<MarkerTag>()
+                if (tagList is ArrayList<MarkerTag> && tagList.isNotEmpty()) {
+                    viewModel.mMap.setPadding(0, 0, 0, 1100)
+                    val zoom = viewModel.mMap.cameraPosition.zoom
+                    var duration = 100f
+                    if (zoom != 0f) {
+                        duration = 300f * (12f / zoom)
+                    }
 
-                viewModel.mMap.animateCamera(
-                    CameraUpdateFactory.newLatLngZoom(marker.position, 16f),
-                    duration.toInt(),
-                    object : GoogleMap.CancelableCallback {
-                        override fun onCancel() {
-                            Log.d(TAG, "Interrupted")
-                        }
-
-                        override fun onFinish() {
-                            val infoMarker = viewModel.getInfoMarkersMap()[tagList.first().locationId]
-                            if (infoMarker != null) {
-                                infoMarker.isVisible = true
+                    viewModel.mMap.animateCamera(
+                        CameraUpdateFactory.newLatLngZoom(marker.position, 16f),
+                        duration.toInt(),
+                        object : GoogleMap.CancelableCallback {
+                            override fun onCancel() {
+                                Log.d(TAG, "Interrupted")
                             }
-                            val postDialog = PostDialog.newInstance(tagList as ArrayList<MarkerTag>)
-                            postDialog.show(supportFragmentManager, "postDialog")
-                        }
-                    })
-                return true
+
+                            override fun onFinish() {
+                                val infoMarker =
+                                    viewModel.getInfoMarkersMap()[tagList.first().locationId]
+                                if (infoMarker != null) {
+                                    infoMarker.isVisible = true
+                                }
+                                val postDialog =
+                                    PostContainerDialog.newInstance(tagList)
+                                postDialog.show(supportFragmentManager, "postDialog")
+                            }
+                        })
+                    return true
+                }
             }
         }
         return false

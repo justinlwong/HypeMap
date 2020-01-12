@@ -8,26 +8,28 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
-import com.squareup.picasso.Picasso
+import androidx.viewpager.widget.ViewPager
+import com.google.android.material.tabs.TabLayout
 import justin.apackage.com.hypemap.R
 import justin.apackage.com.hypemap.model.MarkerTag
 import kotlinx.android.synthetic.main.post_dialog.*
 
 /**
- * A Dialog fragment for showing post
+ * A Dialog fragment for showing list of posts at a location
  *
  * @author Justin Wong
  */
-class PostDialog: DialogFragment() {
+class PostContainerDialog: DialogFragment() {
 
-    private lateinit var tag: ArrayList<MarkerTag>
+    private lateinit var tags: ArrayList<MarkerTag>
+    private lateinit var pagerAdapter: PostCollectionPageAdapter
 
     companion object {
         private const val MARKER_TAG = "marker_tag"
 
-        fun newInstance(tag: ArrayList<MarkerTag>): PostDialog {
+        fun newInstance(tag: ArrayList<MarkerTag>): PostContainerDialog {
             val args = Bundle()
-            val newFragment = PostDialog()
+            val newFragment = PostContainerDialog()
 
             args.putParcelableArrayList(MARKER_TAG, tag)
             newFragment.arguments = args
@@ -41,7 +43,7 @@ class PostDialog: DialogFragment() {
 
         val bundle = arguments
         if (bundle != null) {
-            tag = bundle.getParcelableArrayList(MARKER_TAG)
+            tags = bundle.getParcelableArrayList(MARKER_TAG)
         }
     }
 
@@ -53,6 +55,22 @@ class PostDialog: DialogFragment() {
         return inflater.inflate(R.layout.post_dialog, container)
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        childFragmentManager.let {
+            pagerAdapter = PostCollectionPageAdapter(it, tags)
+            val pager: ViewPager = view.findViewById(R.id.viewPager)
+            val tabLayout: TabLayout = view.findViewById(R.id.tabLayout)
+            pager.adapter = pagerAdapter
+            if (tags.size > 1) {
+                tabLayout.visibility = View.VISIBLE
+                tabLayout.setupWithViewPager(pager)
+            } else {
+                tabLayout.visibility = View.GONE
+            }
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         dialog.window?.let { window ->
@@ -61,19 +79,11 @@ class PostDialog: DialogFragment() {
             params.width = 1000
             params.height = 1200
             window.attributes = params
-            Picasso.with(context)
-                .load(tag.first().postUrl)
-                .placeholder(R.drawable.image_placeholder)
-                .into(postImage)
-            postTitle.text = tag.first().userName
-            if (tag.first().caption.isNotBlank()) {
-                postCaption.text = tag.first().caption
-            } else {
-                postCaption.visibility = View.GONE
-            }
             viewButton.setOnClickListener {
                 val i = Intent(Intent.ACTION_VIEW)
-                i.data = Uri.parse(tag.first().linkUrl)
+                val curTag = tags[viewPager.currentItem]
+
+                i.data = Uri.parse(curTag.linkUrl)
                 startActivity(i)
             }
 

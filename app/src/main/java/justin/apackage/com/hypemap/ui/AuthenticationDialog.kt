@@ -1,6 +1,7 @@
 package justin.apackage.com.hypemap.ui
 
 import android.annotation.SuppressLint
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -44,8 +45,7 @@ class AuthenticationDialog(val listener: AuthenticationListener): DialogFragment
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val rootView = inflater.inflate(R.layout.auth_dialog, container)
-        return rootView
+        return inflater.inflate(R.layout.auth_dialog, container)
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -56,9 +56,16 @@ class AuthenticationDialog(val listener: AuthenticationListener): DialogFragment
         webView.settings.loadWithOverviewMode = true
         Log.d(TAG, "Requesting url: $requestUrl")
         webView.webViewClient = object: WebViewClient() {
+
+            override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                super.onPageStarted(view, url, favicon)
+                progressBar?.visibility = View.VISIBLE
+            }
+
             override fun onPageFinished(view: WebView,
                                         url: String) {
                 super.onPageFinished(view, url)
+                progressBar?.visibility = View.GONE
                 if (url.contains("access_token=")) {
                     val uri = Uri.parse(url)
                     val accessToken = uri.encodedFragment

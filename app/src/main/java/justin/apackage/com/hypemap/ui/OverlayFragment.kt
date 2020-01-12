@@ -190,9 +190,15 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
         } else {
             val tagList = (existingMarker.tag as? MutableList<*>)?.filterIsInstance<MarkerTag>()
             tagList?.let {
-                val updatedList = tagList.toMutableList()
-                updatedList.add(tag)
-                existingMarker.tag = updatedList
+                val setIds: MutableSet<String> = mutableSetOf()
+                tagList.forEach {
+                    setIds.add(it.id)
+                }
+                if (!setIds.contains(tag.id)) {
+                    val updatedList = tagList.toMutableList()
+                    updatedList.add(tag)
+                    existingMarker.tag = updatedList
+                }
             }
         }
 
