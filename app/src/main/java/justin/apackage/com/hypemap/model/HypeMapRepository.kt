@@ -69,6 +69,7 @@ class HypeMapRepository(private val application: Application) {
     fun deleteUser(user: User) {
         ioScheduler.scheduleDirect {
             userDao.delete(user.userId)
+            postDao.delete(user.userId)
         }
     }
 
