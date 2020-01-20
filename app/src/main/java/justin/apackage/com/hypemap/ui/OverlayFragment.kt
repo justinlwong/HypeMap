@@ -109,6 +109,10 @@ class OverlayFragment : Fragment(), UsersListAdapter.Listener {
         showOnlyUserPosts(userId)
     }
 
+    override fun onRemoveUser(user: User) {
+        viewModel.deleteUser(user)
+    }
+
     private fun showOnlyUserPosts(userId: String) {
         activeUserId = userId
         clearMarkers()

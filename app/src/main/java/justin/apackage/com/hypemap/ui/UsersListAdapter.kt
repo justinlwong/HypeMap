@@ -1,5 +1,6 @@
 package justin.apackage.com.hypemap.ui
 
+import android.app.AlertDialog
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
@@ -17,6 +18,7 @@ class UsersListAdapter(private val context: Context,
 
     interface Listener {
         fun onActiveUserUpdate(userId: String)
+        fun onRemoveUser(user: User)
     }
 
     private var activePosition: Int = 0
@@ -52,6 +54,11 @@ class UsersListAdapter(private val context: Context,
             listener.onActiveUserUpdate(users[position].userId)
             notifyDataSetChanged()
         }
+
+        holder.userImage.setOnLongClickListener {
+            launchRemoveUserPopup(users[position])
+            return@setOnLongClickListener true
+        }
     }
 
     fun setItems(users: List<User>) {
@@ -64,6 +71,25 @@ class UsersListAdapter(private val context: Context,
         }
         this.users = users
         notifyDataSetChanged()
+    }
+
+    private fun launchRemoveUserPopup(user: User) {
+        val popupBuilder = AlertDialog.Builder(context, R.style.BasicDialog)
+        popupBuilder.setTitle(String.format("Remove %s?", user.userName))
+            .setNegativeButton("Close")
+            { dialog, _ ->
+                dialog.dismiss()
+            }
+            .setPositiveButton("OK")
+            { _, _ ->
+                if (activePosition > 0) {
+                    activePosition -= 1
+                }
+                listener.onActiveUserUpdate(users[activePosition].userId)
+                notifyDataSetChanged()
+                listener.onRemoveUser(user)
+            }
+        popupBuilder.create().show()
     }
 
     companion object {

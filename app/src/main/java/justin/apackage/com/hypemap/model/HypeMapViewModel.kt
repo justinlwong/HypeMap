@@ -25,6 +25,10 @@ class HypeMapViewModel (application: Application) : AndroidViewModel(application
         instaRepo.addUser(userName)
     }
 
+    fun deleteUser(user: User) {
+        instaRepo.deleteUser(user)
+    }
+
     fun getUsers(): LiveData<List<User>> {
         return instaRepo.getUsers()
     }

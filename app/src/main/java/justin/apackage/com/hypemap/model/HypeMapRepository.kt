@@ -66,6 +66,12 @@ class HypeMapRepository(private val application: Application) {
         }
     }
 
+    fun deleteUser(user: User) {
+        ioScheduler.scheduleDirect {
+            userDao.delete(user.userId)
+        }
+    }
+
     private fun fetchPosts(users: List<User>): Observable<RawPost> {
         val postsObservable = Observable.defer{ Observable.just(users)}
             .flatMapIterable { usersList -> usersList }
